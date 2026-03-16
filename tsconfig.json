@@ -1,0 +1,17 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["*"],
+      "@_constants/*": ["_constants/*"],
+      "@_providers/*": ["_providers/*"],
+      "@_services/*": ["_services/*"],
+      "@_components/*": ["_components/*"],
+      "@_mocks/*": ["_mocks/*"],
+      "@_types/*": ["_types/*"]
+    }
+  },
+  "extends": "expo/tsconfig.base",
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts"],
+  "exclude": ["backend/**/*"]
+}
