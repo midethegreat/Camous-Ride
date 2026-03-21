@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -6,13 +6,25 @@ import {
   StyleSheet,
   TouchableOpacity,
   RefreshControl,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import Colors from "@/_constants/Colors";
-import { useNotifications } from "@/_providers/NotificationProvider";
+import Colors from "@/constants/Colors";
+import { useNotifications } from "@/providers/NotificationProvider";
 import { BellDot, Bell, CheckCheck, Trash2 } from "lucide-react-native";
+import {
+  GestureHandlerRootView,
+  Swipeable,
+  LongPressGestureHandler,
+  State,
+} from "react-native-gesture-handler";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
 type NotificationItem = {
   id: string;
@@ -32,7 +44,12 @@ const NotificationsScreen = () => {
   } = useNotifications();
   console.log("Notifications on screen:", notifications);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedNotifications, setSelectedNotifications] = useState<
+    Set<string>
+  >(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
   const router = useRouter();
+  const swipeableRefs = useRef<Map<string, any>>(new Map());
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -44,59 +61,207 @@ const NotificationsScreen = () => {
     markAllAsRead();
   };
 
-  const handleDelete = (id: string) => {
-    deleteNotification(id);
+  const handleDelete = async (id: string) => {
+    await deleteNotification(id);
+    // Close swipeable after deletion
+    const swipeable = swipeableRefs.current.get(id);
+    if (swipeable) {
+      swipeable.close();
+    }
   };
 
-  const renderItem = ({ item }: { item: NotificationItem }) => (
-    <View style={[styles.notificationItem, !item.isRead && styles.unreadItem]}>
-      <TouchableOpacity
-        style={styles.mainContent}
-        onPress={() => !item.isRead && markAsRead(item.id)}
-        activeOpacity={0.7}
-      >
-        <View style={styles.iconWrapper}>
-          {!item.isRead ? (
-            <BellDot color={Colors.primary} size={26} />
-          ) : (
-            <Bell color={Colors.gray} size={26} />
-          )}
-        </View>
-        <View style={styles.notificationContent}>
-          <Text style={styles.title}>{item.title}</Text>
-          <Text style={styles.message}>{item.message}</Text>
-          <Text style={styles.date}>
-            {new Date(item.createdAt).toLocaleString()}
-          </Text>
-        </View>
-      </TouchableOpacity>
+  const handleDeleteMultiple = async () => {
+    if (selectedNotifications.size === 0) return;
 
+    Alert.alert(
+      "Delete Notifications",
+      `Are you sure you want to delete ${selectedNotifications.size} notification(s)?`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            // Delete all selected notifications
+            const deletePromises = Array.from(selectedNotifications).map((id) =>
+              deleteNotification(id),
+            );
+            await Promise.all(deletePromises);
+
+            // Exit selection mode
+            setSelectedNotifications(new Set());
+            setIsSelectionMode(false);
+          },
+        },
+      ],
+    );
+  };
+
+  const handleLongPress = (notification: NotificationItem) => {
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+      setSelectedNotifications(new Set([notification.id]));
+    }
+  };
+
+  const handleNotificationPress = (notification: NotificationItem) => {
+    if (isSelectionMode) {
+      // Toggle selection
+      const newSelected = new Set(selectedNotifications);
+      if (newSelected.has(notification.id)) {
+        newSelected.delete(notification.id);
+        if (newSelected.size === 0) {
+          setIsSelectionMode(false);
+        }
+      } else {
+        newSelected.add(notification.id);
+      }
+      setSelectedNotifications(newSelected);
+    } else {
+      // Normal behavior - mark as read
+      if (!notification.isRead) {
+        markAsRead(notification.id);
+      }
+    }
+  };
+
+  const exitSelectionMode = () => {
+    setSelectedNotifications(new Set());
+    setIsSelectionMode(false);
+  };
+
+  const renderRightActions = (notificationId: string) => {
+    return (
       <TouchableOpacity
-        style={styles.deleteButton}
-        onPress={() => handleDelete(item.id)}
-        activeOpacity={0.6}
+        style={styles.deleteSwipeButton}
+        onPress={() => handleDelete(notificationId)}
+        activeOpacity={0.8}
       >
-        <Trash2 color={Colors.red || "#FF3B30"} size={20} />
+        <Trash2 color={Colors.white} size={24} />
+        <Text style={styles.deleteSwipeText}>Delete</Text>
       </TouchableOpacity>
-    </View>
-  );
+    );
+  };
+
+  const renderItem = ({ item }: { item: NotificationItem }) => {
+    const isSelected = selectedNotifications.has(item.id);
+
+    return (
+      <LongPressGestureHandler
+        onHandlerStateChange={({ nativeEvent }) => {
+          if (nativeEvent.state === State.ACTIVE) {
+            handleLongPress(item);
+          }
+        }}
+        minDurationMs={500}
+      >
+        <Animated.View>
+          <Swipeable
+            ref={(ref) => {
+              if (ref) {
+                swipeableRefs.current.set(item.id, ref);
+              } else {
+                swipeableRefs.current.delete(item.id);
+              }
+            }}
+            renderRightActions={() => renderRightActions(item.id)}
+            enabled={!isSelectionMode}
+            onSwipeableOpen={() => {
+              // Close other swipeables when one opens
+              swipeableRefs.current.forEach((ref, id) => {
+                if (id !== item.id && ref) {
+                  ref.close();
+                }
+              });
+            }}
+          >
+            <TouchableOpacity
+              style={[
+                styles.notificationItem,
+                !item.isRead && styles.unreadItem,
+                isSelected && styles.selectedItem,
+                isSelectionMode && styles.selectionModeItem,
+              ]}
+              onPress={() => handleNotificationPress(item)}
+              activeOpacity={0.7}
+              disabled={isSelectionMode && false} // Keep enabled in selection mode
+            >
+              <View style={styles.mainContent}>
+                <View style={styles.iconWrapper}>
+                  {!item.isRead ? (
+                    <BellDot color={Colors.primary} size={26} />
+                  ) : (
+                    <Bell color={Colors.gray} size={26} />
+                  )}
+                </View>
+                <View style={styles.notificationContent}>
+                  <Text style={styles.title}>{item.title}</Text>
+                  <Text style={styles.message}>{item.message}</Text>
+                  <Text style={styles.date}>
+                    {new Date(item.createdAt).toLocaleString()}
+                  </Text>
+                </View>
+                {isSelectionMode && (
+                  <View
+                    style={[
+                      styles.selectionIndicator,
+                      isSelected && styles.selectionIndicatorSelected,
+                    ]}
+                  >
+                    {isSelected && (
+                      <FontAwesome
+                        name="check"
+                        size={16}
+                        color={Colors.white}
+                      />
+                    )}
+                  </View>
+                )}
+              </View>
+            </TouchableOpacity>
+          </Swipeable>
+        </Animated.View>
+      </LongPressGestureHandler>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.headerBar}>
         <TouchableOpacity
-          onPress={() => router.back()}
+          onPress={isSelectionMode ? exitSelectionMode : () => router.back()}
           style={styles.backButton}
         >
-          <FontAwesome name="arrow-left" size={24} color="#333" />
+          <FontAwesome
+            name={isSelectionMode ? "times" : "arrow-left"}
+            size={24}
+            color="#333"
+          />
         </TouchableOpacity>
-        <Text style={styles.header}>Notifications</Text>
-        <TouchableOpacity
-          onPress={handleMarkAllRead}
-          style={styles.markAllButton}
-        >
-          <CheckCheck size={22} color={Colors.primary} />
-        </TouchableOpacity>
+        <Text style={styles.header}>
+          {isSelectionMode
+            ? `${selectedNotifications.size} selected`
+            : "Notifications"}
+        </Text>
+        {isSelectionMode ? (
+          <TouchableOpacity
+            onPress={handleDeleteMultiple}
+            style={styles.deleteAllButton}
+            disabled={selectedNotifications.size === 0}
+          >
+            <Trash2
+              size={22}
+              color={selectedNotifications.size > 0 ? Colors.red : Colors.gray}
+            />
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            onPress={handleMarkAllRead}
+            style={styles.markAllButton}
+          >
+            <CheckCheck size={22} color={Colors.primary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {notifications.length > 0 ? (
@@ -178,6 +343,45 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderLeftWidth: 1,
     borderLeftColor: Colors.border,
+  },
+  deleteSwipeButton: {
+    backgroundColor: Colors.red || "#FF3B30",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 80,
+    borderRadius: 12,
+    marginVertical: 6,
+  },
+  deleteSwipeText: {
+    color: Colors.white,
+    fontSize: 14,
+    fontWeight: "600",
+    marginTop: 4,
+  },
+  deleteAllButton: {
+    padding: 5,
+  },
+  selectedItem: {
+    backgroundColor: Colors.primaryLight,
+    borderColor: Colors.primary,
+    borderWidth: 2,
+  },
+  selectionModeItem: {
+    // Add subtle animation or visual cue for selection mode
+  },
+  selectionIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: Colors.gray,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: 12,
+  },
+  selectionIndicatorSelected: {
+    backgroundColor: Colors.primary,
+    borderColor: Colors.primary,
   },
   iconWrapper: {
     marginRight: 16,

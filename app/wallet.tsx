@@ -12,7 +12,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { addBankAccount } from "@/_services/banking/bankService";
+import { addBankAccount } from "@/services/banking/bankService";
 import { LinearGradient } from "expo-linear-gradient";
 import {
   Menu,
@@ -35,14 +35,14 @@ import {
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
-import DrawerMenu from "@/_components/DrawerMenu";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
+import DrawerMenu from "@/components/DrawerMenu";
 
-import { API_URL } from "@/_constants/apiConfig";
+import { API_URL } from "@/constants/apiConfig";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
-import Header from "@/_components/Header";
+import Header from "@/components/Header";
 
 type Transaction = {
   id: string;

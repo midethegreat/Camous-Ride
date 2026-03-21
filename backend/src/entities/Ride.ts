@@ -4,8 +4,10 @@ import {
   Column,
   CreateDateColumn,
   ManyToOne,
+  JoinColumn,
 } from "typeorm";
 import { User } from "./User";
+import { Driver } from "./Driver";
 
 export enum RideStatus {
   BOOKED = "booked",
@@ -20,10 +22,15 @@ export class Ride {
   id!: string;
 
   @ManyToOne(() => User, (user) => user.id)
+  @JoinColumn({ name: "userId" })
   user!: User;
 
-  @ManyToOne(() => User, { nullable: true })
-  driver!: User;
+  @ManyToOne(() => Driver, { nullable: true })
+  @JoinColumn({ name: "driverId" })
+  driver?: Driver;
+
+  @Column({ nullable: true })
+  driverId?: number;
 
   @Column()
   origin!: string;

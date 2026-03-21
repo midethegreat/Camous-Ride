@@ -33,10 +33,10 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
-import DrawerMenu from "@/_components/DrawerMenu";
-import Header from "@/_components/Header";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
+import DrawerMenu from "@/components/DrawerMenu";
+import Header from "@/components/Header";
 import * as ImagePicker from "expo-image-picker";
 
 const DELETE_REASONS = [

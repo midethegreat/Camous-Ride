@@ -13,10 +13,19 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { ArrowLeft, Bot, Send, UserCheck } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { ChatMessage } from "@/_types";
-import { AI_RESPONSES } from "@/_mocks/data";
-import Header from "@/_components/Header";
+import Colors from "@/constants/Colors";
+import { ChatMessage } from "@/types";
+import Header from "@/components/Header";
+
+const AI_RESPONSES: string[] = [
+  "Hi there! I'm CID Support AI. How can I help you today?",
+  "I can help you with ride bookings, wallet issues, or account settings. What do you need?",
+  "Let me look into that for you. One moment please...",
+  "I've found some information that might help. Would you like me to connect you with a live agent?",
+  "Your ride history shows your last trip was completed successfully. Is there anything specific about it?",
+  "For payment issues, I recommend checking your wallet balance first. You can top up via Monnify or Crypto.",
+  "I'm connecting you with a live support agent now. Please hold on...",
+];
 
 export default function SupportScreen() {
   const router = useRouter();

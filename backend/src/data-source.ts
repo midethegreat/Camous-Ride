@@ -7,13 +7,29 @@ import { Notification } from "./entities/Notification";
 import { BankAccount } from "./entities/BankAccount";
 import { Guest } from "./entities/Guest";
 import { FraudLog } from "./entities/FraudLog";
+import { Voucher } from "./entities/Voucher";
+import { ChatMessage } from "./entities/ChatMessage";
+import { Driver } from "./entities/Driver";
+import { Rider } from "./entities/Rider";
 
 export const AppDataSource = new DataSource({
   type: "sqlite",
   database: "database.sqlite",
   synchronize: true,
   logging: false,
-  entities: [User, Transaction, Ride, Notification, BankAccount, Guest, FraudLog],
+  entities: [
+    User,
+    Transaction,
+    Ride,
+    Notification,
+    BankAccount,
+    Guest,
+    FraudLog,
+    Voucher,
+    ChatMessage,
+    Driver,
+    Rider,
+  ],
   migrations: [],
   subscribers: [],
 });

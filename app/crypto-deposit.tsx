@@ -22,9 +22,9 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
-import { API_URL } from "@/_constants/apiConfig";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
+import { API_URL } from "@/constants/apiConfig";
 
 type CryptoType = "BTC" | "ETH" | "USDT" | "BNB";
 type DepositStep = "amount" | "address";

@@ -25,8 +25,8 @@ import {
 } from "lucide-react-native";
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
-import Colors from "@/_constants/Colors";
-import { API_URL } from "@/_constants/apiConfig";
+import Colors from "@/constants/Colors";
+import { API_URL } from "@/constants/apiConfig";
 
 type Step = 1 | 2 | 3 | 4 | 5 | 6;
 
@@ -137,41 +137,17 @@ export default function GuestOnboarding() {
     try {
       setEmailError(null);
       setLoading(true);
-      const timeoutMs = 8000;
-      const controller = new AbortController();
-      const t = setTimeout(() => controller.abort(), timeoutMs);
-      const res = await fetch(`${API_URL}/api/guests/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, password }),
-        signal: controller.signal,
-      }).finally(() => clearTimeout(t));
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        const msg = data.message || "Failed to send code.";
-        if (msg.toLowerCase().includes("email")) {
-          setStep(2);
-          setEmailError(msg);
-          return;
-        }
-        throw new Error(msg);
-      }
+
+      // Mock guest registration
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      Alert.alert("Code Sent", `We sent a verification code to ${email}.`);
+      Alert.alert("Code Sent (MOCK)", `We sent a verification code to ${email}. (MOCK OTP: 123456)`);
       if (resendTimer === 0) {
         setResendTimer(120);
       }
     } catch (e: any) {
-      const msg =
-        e?.name === "AbortError"
-          ? "Request timed out. Check backend is running and reachable."
-          : e?.message || "Could not start verification.";
-      if (String(msg).toLowerCase().includes("email")) {
-        setStep(2);
-        setEmailError(String(msg));
-      } else {
-        Alert.alert("Error", msg);
-      }
+      Alert.alert("Error", e?.message || "Could not start verification.");
     } finally {
       setLoading(false);
     }
@@ -184,68 +160,65 @@ export default function GuestOnboarding() {
     }
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/guests/upload-docs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          fullName,
-          nationalIdUrl: nationalIdUri,
-          selfieUrl: selfieUri,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok)
-        throw new Error(data.message || "Failed to upload documents.");
+      // Mock doc upload
+      await new Promise((resolve) => setTimeout(resolve, 800));
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      setRedirecting(true);
-      animateTo(1);
-      setTimeout(() => {
-        router.replace("/" as never);
-      }, 1600);
+      await completeGuestOnboarding();
     } catch (e: any) {
-      Alert.alert("Error", e?.message || "Could not upload documents.");
+      Alert.alert("Error", e?.message || "Failed to upload documents.");
     } finally {
       setLoading(false);
     }
   };
 
   const verifyGuestOtp = async () => {
-    if (otp.length < 4) {
-      Alert.alert(
-        "Invalid code",
-        "Enter the verification code sent to your email.",
-      );
+    if (!otp.trim()) {
+      Alert.alert("Missing OTP", "Enter the verification code.");
       return;
     }
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/guests/verify-otp`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, otp }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Verification failed.");
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      // Mark guest as verified for routing, persist basic guest profile, and go to home
-      await AsyncStorage.setItem("cid_guest_auth", "true");
-      const prev = await AsyncStorage.getItem("cid_guest_profile").catch(
-        () => null,
-      );
-      const prevJson = prev ? JSON.parse(prev) : {};
-      const profile = {
-        fullName: fullName || prevJson.fullName || "",
-        email: email || prevJson.email || "",
-        bio: prevJson.bio || "",
-        phoneNumber: prevJson.phoneNumber || "",
-        gender: gender || prevJson.gender || "",
-        employmentStatus: employmentStatus || prevJson.employmentStatus || "",
-      };
-      await AsyncStorage.setItem("cid_guest_profile", JSON.stringify(profile));
-      router.replace("/" as never);
+      // Mock OTP verification
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      if (otp === "123456") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        setStep(5);
+        animateTo(5 / 6);
+      } else {
+        throw new Error("Invalid code (MOCK: 123456)");
+      }
     } catch (e: any) {
       Alert.alert("Error", e?.message || "Verification failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const completeGuestOnboarding = async () => {
+    try {
+      setLoading(true);
+      // Mock completion
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      await AsyncStorage.setItem("cid_guest_auth", "true");
+      await AsyncStorage.setItem(
+        "cid_guest_profile",
+        JSON.stringify({
+          fullName,
+          email,
+          bio: "",
+          phoneNumber: "",
+          gender,
+          employmentStatus,
+        }),
+      );
+      setRedirecting(true);
+      animateTo(1);
+      setTimeout(() => router.replace("/" as never), 1500);
+    } catch (e: any) {
+      Alert.alert("Error", e?.message || "Failed to complete onboarding.");
     } finally {
       setLoading(false);
     }

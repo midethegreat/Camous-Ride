@@ -13,7 +13,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ShieldCheck, Zap, MapPin, ArrowRight } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
+import Colors from "@/constants/Colors";
 
 const { width, height } = Dimensions.get("window");
 
@@ -219,11 +219,13 @@ export default function WelcomeScreen() {
                 <Text style={styles.usersText}>+1.2k riders</Text>
               </View>
             </View>
-            <Text style={styles.campusTag}>KEKE FUNAAB</Text>
-            <Text style={styles.appName}>Campus rides,{"\n"}made simple.</Text>
+            <Text style={styles.campusTag}>COLISDAV</Text>
+            <Text style={styles.appName}>
+              COLISDAV rides,{"\n"}made simple.
+            </Text>
             <Text style={styles.tagline}>
               Safe, affordable transportation for university students across
-              campus.
+              campus with COLISDAV.
             </Text>
           </Animated.View>
 

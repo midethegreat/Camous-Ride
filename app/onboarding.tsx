@@ -25,10 +25,11 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
+import { StudentRecord } from "@/types";
+import { API_URL } from "@/constants/apiConfig";
 import { STUDENT_DATABASE } from "@/_mocks/data";
-import { StudentRecord } from "@/_types";
 
 export default function OnboardingScreen() {
   const router = useRouter();
@@ -72,19 +73,31 @@ export default function OnboardingScreen() {
     }).start();
   };
 
-  const handleMatricLookup = () => {
+  const handleMatricLookup = async () => {
     setError("");
-    const record = STUDENT_DATABASE[matric.trim()];
-    if (!record) {
-      setError(
-        "Matric number not found in school database. Please check and try again.",
-      );
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-      return;
+    setLoading(true);
+    try {
+      // Use mock data for matric lookup
+      const record = STUDENT_DATABASE[matric.trim()];
+
+      // Simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      if (!record) {
+        setError(
+          "Matric number not found in school database (MOCK). Please check and try again.",
+        );
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        return;
+      }
+      setStudentInfo(record);
+      setLookupDone(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (e) {
+      setError("An error occurred during lookup. Please try again.");
+    } finally {
+      setLoading(false);
     }
-    setStudentInfo(record);
-    setLookupDone(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const handlePickImage = async () => {

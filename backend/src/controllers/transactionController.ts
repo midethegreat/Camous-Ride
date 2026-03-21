@@ -190,7 +190,7 @@ export const initializeFlutterwavePayment = async (
       });
     }
 
-    const transactionRef = `CAMPUSRIDE_${Date.now()}`;
+    const transactionRef = `COLISDAV_${Date.now()}`;
 
     const payload = {
       tx_ref: transactionRef,
@@ -204,8 +204,8 @@ export const initializeFlutterwavePayment = async (
         name: fullName,
       },
       customizations: {
-        title: "CampusRide Wallet Deposit",
-        description: "Fund your CampusRide wallet",
+        title: "COLISDAV Wallet Deposit",
+        description: "Fund your COLISDAV wallet",
         logo: "https://your-app.com/logo.png",
       },
     };

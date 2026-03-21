@@ -5,6 +5,7 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "strict": true,
+    "strictPropertyInitialization": false,
     "allowJs": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,

@@ -33,13 +33,14 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { CAMPUS_CENTER, CAMPUS_LOCATIONS } from "@/_constants/campus";
-import { useAuth } from "@/_providers/AuthProvider";
-import DrawerMenu from "@/_components/DrawerMenu";
-import LeafletMap from "@/_components/LeafletMap";
-import { MOCK_VOUCHERS } from "@/_mocks/data";
-import { CampusLocation, Voucher } from "@/_types";
+import Colors from "@/constants/Colors";
+import { CAMPUS_CENTER, CAMPUS_LOCATIONS } from "@/constants/campus";
+import { API_URL } from "@/constants/apiConfig";
+import { useAuth } from "@/providers/AuthProvider";
+import DrawerMenu from "@/components/DrawerMenu";
+import ProfessionalMap from "@/components/ProfessionalMap";
+import { CampusLocation, Voucher } from "@/types";
+import { apiClient } from "@/utils/apiClient";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 const COLLAPSED_HEIGHT = 90;
@@ -57,6 +58,8 @@ export default function HomeScreen() {
   const [paymentMethod, setPaymentMethod] = useState<string>("Wallet");
   const [selectedVoucher, setSelectedVoucher] = useState<Voucher | null>(null);
   const [showVoucherModal, setShowVoucherModal] = useState<boolean>(false);
+  const [availableVouchers, setAvailableVouchers] = useState<Voucher[]>([]);
+  const [loadingVouchers, setLoadingVouchers] = useState<boolean>(true);
   const [showLocationPicker, setShowLocationPicker] = useState<boolean>(false);
   const [pickingFor, setPickingFor] = useState<"pickup" | "destination">(
     "destination",
@@ -118,12 +121,15 @@ export default function HomeScreen() {
               Math.pow(destination.longitude - pickup.longitude, 2),
           ) * 111; // Approx km
 
+        // Calculate estimated duration (assuming average speed of 30 km/h in urban areas)
+        const estimatedDuration = Math.round((dist / 30) * 60); // minutes
+
         const response = await fetch(`${API_URL}/api/rides/calculate-fare`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             distanceKm: dist,
-            durationMinutes: 5, // Mock duration
+            durationMinutes: estimatedDuration,
           }),
         });
 
@@ -200,6 +206,37 @@ export default function HomeScreen() {
     ).start();
   }, []);
 
+  const loadAvailableVouchers = async () => {
+    try {
+      setLoadingVouchers(true);
+      const response = await fetch(`${API_URL}/api/vouchers`);
+
+      // Check if response is JSON before parsing
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.warn("Vouchers API returned non-JSON response");
+        setAvailableVouchers([]);
+        return;
+      }
+
+      const data = await response.json();
+      if (response.ok && data) {
+        setAvailableVouchers(data);
+      } else {
+        setAvailableVouchers([]);
+      }
+    } catch (error) {
+      console.error("Failed to load vouchers:", error);
+      setAvailableVouchers([]);
+    } finally {
+      setLoadingVouchers(false);
+    }
+  };
+
+  useEffect(() => {
+    loadAvailableVouchers();
+  }, []);
+
   const expandSheet = () => {
     setBookingExpanded(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -269,22 +306,62 @@ export default function HomeScreen() {
     return CAMPUS_LOCATIONS;
   }, [searchQuery]);
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (!pickup || !destination) return;
-    const verificationCode = Math.floor(1000 + Math.random() * 9000).toString();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push({
-      pathname: "/booking-confirm" as never,
-      params: {
-        pickup: pickup.name,
-        destination: destination.name,
-        fare: finalFare.toString(),
-        passengers: passengers.toString(),
+
+    try {
+      setLoadingFare(true);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // Create ride request via API
+      const rideRequest = {
+        pickup: {
+          name: pickup.name,
+          latitude: pickup.latitude,
+          longitude: pickup.longitude,
+        },
+        destination: {
+          name: destination.name,
+          latitude: destination.latitude,
+          longitude: destination.longitude,
+        },
+        passengers,
         paymentMethod,
-        voucher: selectedVoucher?.code ?? "",
-        verificationCode,
-      },
-    });
+        voucherCode: selectedVoucher?.code,
+        estimatedFare: finalFare,
+      };
+
+      const response = await fetch(`${API_URL}/api/rides/request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(rideRequest),
+      });
+
+      const data = await response.json();
+      if (response.ok && data.rideId) {
+        // Navigate to ride tracking screen with real ride ID
+        router.push({
+          pathname: "/ride-tracking" as never,
+          params: {
+            rideId: data.rideId,
+            pickup: JSON.stringify(pickup),
+            destination: JSON.stringify(destination),
+            fare: finalFare.toString(),
+          },
+        });
+      } else {
+        throw new Error(data.message || "Failed to create ride request");
+      }
+    } catch (error) {
+      console.error("Failed to create ride request:", error);
+      Alert.alert(
+        "Booking Failed",
+        "Unable to create ride request. Please try again.",
+        [{ text: "OK" }],
+      );
+    } finally {
+      setLoadingFare(false);
+    }
   };
 
   const openLocationPicker = (type: "pickup" | "destination") => {
@@ -341,13 +418,23 @@ export default function HomeScreen() {
     }
 
     return (
-      <LeafletMap
+      <ProfessionalMap
         pickup={pickup}
         destination={destination}
-        onMarkerPress={handleMarkerPress}
         center={mapCenter}
         locations={CAMPUS_LOCATIONS}
-        zoom={17}
+        onMarkerPress={(loc) => {
+          if (pickingFor === "pickup") setPickup(loc);
+          else setDestination(loc);
+        }}
+        userLocation={
+          userLocation
+            ? {
+                latitude: userLocation.coords.latitude,
+                longitude: userLocation.coords.longitude,
+              }
+            : null
+        }
       />
     );
   };
@@ -418,7 +505,7 @@ export default function HomeScreen() {
               <View>
                 <Text style={styles.collapsedTitle}>Where are you going?</Text>
                 <Text style={styles.collapsedSub}>
-                  Tap to book a campus ride
+                  Tap to book a COLISDAV ride
                 </Text>
               </View>
             </View>
@@ -541,7 +628,7 @@ export default function HomeScreen() {
             >
               <Text style={styles.confirmText}>
                 {destination
-                  ? `CONFIRM BOOKING - ₦${finalFare}`
+                  ? `CONFIRM BOOKING${finalFare}`
                   : "SELECT A DESTINATION"}
               </Text>
             </TouchableOpacity>
@@ -553,7 +640,7 @@ export default function HomeScreen() {
         style={[
           styles.aiFab,
           {
-            bottom: (bookingExpanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT) + 16,
+            bottom: (bookingExpanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT) + 36,
             transform: [{ scale: fabPulse }],
           },
         ]}
@@ -569,7 +656,8 @@ export default function HomeScreen() {
         style={[
           styles.locateWrap,
           {
-            bottom: (bookingExpanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT) + 86,
+            bottom:
+              (bookingExpanded ? EXPANDED_HEIGHT : COLLAPSED_HEIGHT) + 106,
           },
         ]}
       >
@@ -649,7 +737,7 @@ export default function HomeScreen() {
                 <Ticket size={18} color={Colors.gray} />
                 <Text style={styles.pickerItemText}>No voucher</Text>
               </TouchableOpacity>
-              {MOCK_VOUCHERS.map((v) => (
+              {availableVouchers.map((v) => (
                 <TouchableOpacity
                   key={v.id}
                   style={styles.pickerItem}
@@ -796,15 +884,18 @@ const styles = StyleSheet.create({
   avatarLetter: { fontSize: 18, fontWeight: "700", color: Colors.primary },
   bookingSheet: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 20,
+    left: 16,
+    right: 16,
     backgroundColor: Colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderRadius: 24,
     elevation: 10,
     zIndex: 20,
     overflow: "hidden",
+    shadowColor: Colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   sheetHandleArea: { paddingTop: 10, paddingBottom: 4, alignItems: "center" },
   sheetHandle: {
@@ -937,7 +1028,8 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 16,
+    marginTop: 5,
+    marginBottom: 24,
   },
   confirmBtnDisabled: { opacity: 0.5 },
   confirmText: {

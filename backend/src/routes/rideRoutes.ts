@@ -7,9 +7,17 @@ import {
   cancelRide,
   rateAndTipRide,
   getFareEstimate,
+  requestRide,
+  acceptRide,
 } from "../controllers/rideController";
 
 const router = Router();
+
+// Route to request a ride with real-time driver matching
+router.post("/request", requestRide);
+
+// Route for driver to accept a ride request
+router.post("/accept", acceptRide);
 
 // Route to book a new ride
 router.post("/", bookRide);

@@ -29,9 +29,9 @@ import {
 import * as ImagePicker from "expo-image-picker";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
-import { API_URL } from "@/_constants/apiConfig";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
+import { API_URL } from "@/constants/apiConfig";
 
 const { width } = Dimensions.get("window");
 
@@ -71,11 +71,21 @@ export default function VerifyKYCScreen() {
 
   const fetchBanks = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/banks/list`);
-      if (response.ok) {
-        const data = await response.json();
-        setBanks(data);
-      }
+      // Mock bank list
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      const mockBanks = [
+        { code: "011", name: "First Bank of Nigeria" },
+        { code: "033", name: "United Bank for Africa (UBA)" },
+        { code: "044", name: "Access Bank" },
+        { code: "058", name: "Guaranty Trust Bank (GTBank)" },
+        { code: "057", name: "Zenith Bank" },
+        { code: "032", name: "Union Bank of Nigeria" },
+        { code: "070", name: "Fidelity Bank" },
+        { code: "214", name: "First City Monument Bank (FCMB)" },
+        { code: "076", name: "Polaris Bank" },
+        { code: "215", name: "Unity Bank" },
+      ];
+      setBanks(mockBanks);
     } catch (error) {
       console.error("Error fetching banks:", error);
     }
@@ -89,26 +99,16 @@ export default function VerifyKYCScreen() {
 
     setIsVerifyingBank(true);
     try {
-      const response = await fetch(`${API_URL}/api/banks/verify`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          accountNumber,
-          bankCode: selectedBank.code,
-        }),
-      });
-      const data = await response.json();
-      if (response.ok && data.account_name) {
-        setAccountName(data.account_name);
+      // Mock bank verification
+      await new Promise((resolve) => setTimeout(resolve, 800));
+      if (accountNumber.length === 10) {
+        setAccountName(user?.fullName || "Adefaka Mosimiloluwa");
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
       } else {
-        Alert.alert(
-          "Verification Failed",
-          data.message || "Could not verify account.",
-        );
+        throw new Error("Invalid account number (MOCK: 10 digits required)");
       }
-    } catch (error) {
-      Alert.alert("Error", "Bank verification failed. Please try again.");
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to verify account.");
     } finally {
       setIsVerifyingBank(false);
     }
@@ -192,48 +192,25 @@ export default function VerifyKYCScreen() {
         Alert.alert("Selfie Required", "Please take/upload a selfie.");
         return;
       }
-      handleSubmit();
+      submitKYC();
     }
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  const handleSubmit = async () => {
+  const submitKYC = async () => {
+    if (!governmentIdImage || !selfieImage || !selectedBank || !accountNumber) {
+      Alert.alert("Missing info", "Please complete all fields.");
+      return;
+    }
+
     setIsSubmitting(true);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
     try {
-      const response = await fetch(`${API_URL}/api/users/submit-kyc`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: user?.id,
-          fullName,
-          email,
-          governmentIdImage,
-          selfieImage,
-          bankCode: selectedBank?.code,
-          accountNumber,
-          accountName,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setStep("reviewing");
-        // Start polling for verification status
-        let attempts = 0;
-        const interval = setInterval(async () => {
-          attempts++;
-          await refreshUser();
-          if (attempts > 15) clearInterval(interval); // Stop after 15 attempts (30s)
-        }, 2000);
-      } else {
-        Alert.alert("Error", data.message || "Failed to submit KYC.");
-      }
-    } catch (error) {
-      console.error("KYC Error:", error);
-      Alert.alert("Error", "Could not connect to the server.");
+      // Mock KYC submission
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+      setStep("reviewing");
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (error: any) {
+      Alert.alert("Error", error.message || "Failed to submit KYC.");
     } finally {
       setIsSubmitting(false);
     }

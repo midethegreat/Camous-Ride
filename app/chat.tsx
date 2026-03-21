@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -28,15 +28,17 @@ import {
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { ChatMessage } from "@/_types";
-import { MOCK_CHAT_MESSAGES, MOCK_DRIVERS } from "@/_mocks/data";
-import Colors from "@/_constants/Colors";
+import { ChatMessage, Driver } from "@/types";
+import { API_URL } from "@/constants/apiConfig";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
 
 // Use shared theme colors across the app
 
 export default function ChatScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const params = useLocalSearchParams<{
     driverName?: string;
     driverId?: string;
@@ -44,13 +46,40 @@ export default function ChatScreen() {
   const driverName = params.driverName ?? "Ayomide Cole";
   const driverId = params.driverId ?? "2";
 
-  const driver = MOCK_DRIVERS.find((d) => d.id === driverId) ?? MOCK_DRIVERS[1];
-
-  const [messages, setMessages] = useState<ChatMessage[]>(MOCK_CHAT_MESSAGES);
+  const [driver, setDriver] = useState<Driver | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState<string>("");
   const [showDriverProfile, setShowDriverProfile] = useState<boolean>(false);
   const profileSlide = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView>(null);
+
+  useEffect(() => {
+    fetchChat();
+  }, [user, driverId]);
+
+  const fetchChat = async () => {
+    if (!user) return;
+    try {
+      // 1) Fetch driver info
+      const drRes = await fetch(`${API_URL}/api/users/drivers/available`);
+      if (drRes.ok) {
+        const drivers = await drRes.json();
+        const found = drivers.find((d: Driver) => d.id === driverId);
+        if (found) setDriver(found);
+      }
+
+      // 2) Fetch messages
+      const res = await fetch(
+        `${API_URL}/api/chat?userId=${user.id}&driverId=${driverId}`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch chat:", e);
+    }
+  };
 
   const openProfile = () => {
     setShowDriverProfile(true);
@@ -71,29 +100,36 @@ export default function ChatScreen() {
     }).start(() => setShowDriverProfile(false));
   };
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
+  const sendMessage = async () => {
+    if (!inputText.trim() || !user) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const newMsg: ChatMessage = {
-      id: Date.now().toString(),
+
+    const newMsg: any = {
+      userId: user.id,
+      driverId: driverId,
       text: inputText.trim(),
       sender: "user",
-      timestamp: "Just now",
     };
-    setMessages((prev) => [...prev, newMsg]);
-    setInputText("");
 
-    setTimeout(() => {
-      const reply: ChatMessage = {
-        id: (Date.now() + 1).toString(),
-        text: "Got it! I'll be there in about 3 minutes.",
-        sender: "driver",
-        timestamp: "Just now",
-      };
-      setMessages((prev) => [...prev, reply]);
-    }, 2000);
+    try {
+      const res = await fetch(`${API_URL}/api/chat`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newMsg),
+      });
 
-    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages((prev) => [...prev, data]);
+        setInputText("");
+        setTimeout(
+          () => scrollRef.current?.scrollToEnd({ animated: true }),
+          100,
+        );
+      }
+    } catch (e) {
+      console.error("Failed to send message:", e);
+    }
   };
 
   const handleCall = () => {
@@ -104,6 +140,8 @@ export default function ChatScreen() {
     inputRange: [0, 1],
     outputRange: [600, 0],
   });
+
+  if (!driver) return null;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>

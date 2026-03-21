@@ -15,7 +15,7 @@ import {
   UserCheck,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
+import Colors from "@/constants/Colors";
 
 const previousChats = [
   {

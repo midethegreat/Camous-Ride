@@ -14,8 +14,8 @@ import { ArrowLeft, Share2, Download, CheckCircle, Printer } from "lucide-react-
 import QRCode from "react-native-qrcode-svg";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import DepositReceipt from "@/_components/DepositReceipt";
-import Colors from "@/_constants/Colors";
+import DepositReceipt from "@/components/DepositReceipt";
+import Colors from "@/constants/Colors";
 
 const { height: SCREEN_HEIGHT } = Dimensions.get("window");
 

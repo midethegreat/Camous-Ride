@@ -12,7 +12,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { GraduationCap, Users, ArrowRight, ArrowLeft } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
-import Colors from "@/_constants/Colors";
+import Colors from "@/constants/Colors";
 
 export default function RoleSelectScreen() {
   const router = useRouter();

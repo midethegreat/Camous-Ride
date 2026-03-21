@@ -15,9 +15,9 @@ import {
   ArrowDownLeft,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { API_URL } from "@/_constants/apiConfig";
-import { useAuth } from "@/_providers/AuthProvider";
-import Colors from "@/_constants/Colors";
+import { API_URL } from "@/constants/apiConfig";
+import { useAuth } from "@/providers/AuthProvider";
+import Colors from "@/constants/Colors";
 
 type Tx = {
   id: string;

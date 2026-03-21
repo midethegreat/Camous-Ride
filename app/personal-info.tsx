@@ -23,8 +23,8 @@ import {
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
 
 type GuestProfile = {
   fullName: string;

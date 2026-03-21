@@ -10,9 +10,9 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import { Star, Check } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
-import Notification from "@/_components/Notification";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
+import Notification from "@/components/Notification";
 
 export default function PostRideScreen() {
   const router = useRouter();

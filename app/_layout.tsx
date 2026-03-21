@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { AuthProvider, useAuth } from "@/_providers/AuthProvider";
+import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { NotificationProvider } from "@/_providers/NotificationProvider";
-import { API_URL } from "@/_constants/apiConfig";
-import ErrorBoundary from "@/_components/ErrorBoundary";
+import { NotificationProvider } from "@/providers/NotificationProvider";
+import { API_URL } from "@/constants/apiConfig";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.

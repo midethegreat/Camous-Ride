@@ -15,7 +15,7 @@ import { useRouter } from "expo-router";
 import { ArrowLeft, ShieldCheck, Eye, EyeOff } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@/_providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 
 const Colors = {
   primary: "#38A169", // GREEN (was "#0057FF")

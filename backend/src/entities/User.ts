@@ -4,8 +4,11 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  OneToOne,
+  JoinColumn,
 } from "typeorm";
 import { Transaction } from "./Transaction";
+import { Driver } from "./Driver";
 
 export enum RewardTier {
   BRONZE = "Bronze",
@@ -97,4 +100,33 @@ export class User {
 
   @OneToMany(() => Transaction, (transaction) => transaction.user)
   transactions!: Transaction[];
+
+  // Driver-specific fields
+  @Column({ default: false })
+  isDriver!: boolean;
+
+  @Column({ default: false })
+  isOnline!: boolean;
+
+  @Column({ default: false })
+  isAvailable!: boolean;
+
+  @Column({ type: "varchar", nullable: true })
+  vehiclePlate!: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  vehicleModel!: string | null;
+
+  @Column({ type: "varchar", nullable: true })
+  driverLicense!: string | null;
+
+  @Column({ type: "float", nullable: true })
+  currentLatitude!: number | null;
+
+  @Column({ type: "float", nullable: true })
+  currentLongitude!: number | null;
+
+  @OneToOne(() => Driver, (driver) => driver.user, { nullable: true })
+  @JoinColumn()
+  driverProfile?: Driver;
 }

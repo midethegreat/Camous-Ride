@@ -28,7 +28,7 @@ function parseFrom(from: string) {
 export const sendOtpEmail = async (to: string, otp: string) => {
   const parsed = parseFrom(MAIL_FROM);
   const fromEmail = MAIL_FROM_EMAIL || parsed.email;
-  const fromName = MAIL_FROM_NAME || parsed.name || "CampusRide";
+  const fromName = MAIL_FROM_NAME || parsed.name || "COLISDAV";
   if (!fromEmail || !fromEmail.includes("@")) {
     const hasKey = Boolean(SENDGRID_API_KEY);
     if (process.env.NODE_ENV !== "production" && !hasKey) {
@@ -42,17 +42,17 @@ export const sendOtpEmail = async (to: string, otp: string) => {
   const msg = {
     to,
     from: { email: fromEmail, name: fromName },
-    subject: "Your CampusRide Verification Code",
+    subject: "Your COLISDAV Verification Code",
     html: `
       <div style="font-family: Arial, sans-serif; color: #333;">
-        <h2>Welcome to CampusRide!</h2>
+        <h2>Welcome to COLISDAV!</h2>
         <p>Your verification code is:</p>
         <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px;">${otp}</p>
         <p>This code will expire in 10 minutes.</p>
         <p>If you did not request this code, please ignore this email.</p>
         <br>
         <p>Best,</p>
-        <p>The CampusRide Team</p>
+        <p>The COLISDAV Team</p>
       </div>
     `,
   } as Parameters<typeof sgMail.send>[0];

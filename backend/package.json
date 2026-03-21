@@ -6,6 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "ts-node-dev --require dotenv/config --respawn src/index.ts",
+    "multi": "ts-node-dev --require dotenv/config --respawn src/multiServerEntry.ts",
     "smoke": "node ./smoke.mjs"
   },
   "keywords": [],
@@ -14,6 +15,8 @@
   "type": "commonjs",
   "dependencies": {
     "@sendgrid/mail": "^8.1.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/socket.io": "^3.0.1",
     "@types/ws": "^8.18.1",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
@@ -22,10 +25,12 @@
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "flutterwave-node-v3": "^1.1.10",
+    "jsonwebtoken": "^9.0.3",
     "mailersend": "^2.2.0",
     "nodemailer": "^6.10.1",
     "reflect-metadata": "^0.2.2",
     "resend": "^3.5.0",
+    "socket.io": "^4.8.3",
     "sqlite3": "^5.1.7",
     "ts-node-dev": "^2.0.0",
     "typeorm": "^0.3.28",

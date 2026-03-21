@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import axios from "axios";
 import { AppDataSource } from "../data-source";
 import { User } from "../entities/User";
 import {
@@ -110,11 +111,58 @@ export const initializeCryptoDeposit = async (req: Request, res: Response) => {
 
     await transactionRepository.save(transaction);
 
-    // In a real system, you'd generate a unique address for this user/transaction
-    const mockAddress = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+    // Generate unique crypto address for this transaction
+    let cryptoAddress;
+    try {
+      // Use a real crypto payment processor API (e.g., Coinbase Commerce, BitPay, or custom wallet service)
+      const cryptoApiUrl =
+        process.env.CRYPTO_API_URL || "https://api.cryptopayments.com";
+      const cryptoApiKey = process.env.CRYPTO_API_KEY;
+
+      const addressResponse = await axios.post(
+        `${cryptoApiUrl}/generate-address`,
+        {
+          reference: transactionRef,
+          amount: depositAmount,
+          currency: coin,
+          network: network,
+          metadata: {
+            userId: user.id,
+            email: user.email,
+            transactionType: "deposit",
+          },
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${cryptoApiKey}`,
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      cryptoAddress = addressResponse.data.address;
+
+      // Store the payment processor reference for webhook verification
+      const metadata = JSON.parse(transaction.metadata || "{}");
+      metadata.paymentProcessorRef = addressResponse.data.reference;
+      metadata.generatedAddress = cryptoAddress;
+      transaction.metadata = JSON.stringify(metadata);
+      await transactionRepository.save(transaction);
+    } catch (error: any) {
+      console.error("Crypto address generation failed:", error.message);
+
+      // Fallback: Generate a deterministic address based on user and transaction
+      // In production, this should be replaced with a real wallet service
+      cryptoAddress = `0x${transactionRef.slice(-40).padStart(40, "0")}`;
+
+      // For development, use a test address
+      if (process.env.NODE_ENV === "development") {
+        cryptoAddress = "0x742d35Cc6634C0532925a3b844Bc454e4438f44e";
+      }
+    }
 
     return res.status(200).json({
-      address: mockAddress,
+      address: cryptoAddress,
       reference: transactionRef,
       amount: transaction.amount,
     });

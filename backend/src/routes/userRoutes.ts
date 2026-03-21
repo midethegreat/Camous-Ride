@@ -10,10 +10,16 @@ import {
   setPin,
   getUserBalance,
   submitKYC,
+  verifyMatric,
+  getAvailableDrivers,
+  updateUserProfile,
 } from "../controllers/userController";
 
 const router = express.Router();
 
+router.get("/verify-matric/:matricNumber", verifyMatric);
+router.get("/drivers/available", getAvailableDrivers);
+router.patch("/profile", updateUserProfile);
 router.post("/register", registerUser);
 router.post("/login", loginUser);
 router.post("/logout", logoutUser);

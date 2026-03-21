@@ -19,10 +19,10 @@ export const FARE_CONFIG = {
 
 export const calculateFare = (
   params: FareParams,
-  isCampusRide: boolean = true,
+  isCOLISDAVRide: boolean = true,
 ) => {
-  // A. CAMPUS FIXED PRICING (NO SURGE)
-  if (isCampusRide) {
+  // A. COLISDAV FIXED PRICING (NO SURGE)
+  if (isCOLISDAVRide) {
     return FARE_CONFIG.CAMPUS_FIXED_FARE;
   }
 

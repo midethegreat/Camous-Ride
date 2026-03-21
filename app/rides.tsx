@@ -23,11 +23,11 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { MOCK_DRIVERS } from "@/_mocks/data";
-import { Driver } from "@/_types";
-import DrawerMenu from "@/_components/DrawerMenu";
-import Header from "@/_components/Header";
+import Colors from "@/constants/Colors";
+import { Driver } from "@/types";
+import DrawerMenu from "@/components/DrawerMenu";
+import Header from "@/components/Header";
+import { API_URL } from "@/constants/apiConfig";
 
 type SortType = "nearest" | "seats" | "fare";
 type TricycleFilter = "all" | "yellow" | "green";
@@ -41,7 +41,27 @@ export default function RidesScreen() {
   const [minSeats, setMinSeats] = useState(1);
   const [tricycleFilter, setTricycleFilter] = useState<TricycleFilter>("all");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drivers, setDrivers] = useState<Driver[]>([]);
+  const [loading, setLoading] = useState(true);
   const pulseAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    fetchDrivers();
+  }, []);
+
+  const fetchDrivers = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/users/drivers/available`);
+      if (res.ok) {
+        const data = await res.json();
+        setDrivers(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch drivers:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const animation = Animated.loop(
@@ -63,25 +83,29 @@ export default function RidesScreen() {
   }, [pulseAnim]);
 
   const filteredDrivers = useMemo(() => {
-    return MOCK_DRIVERS.filter((driver) => {
-      const searchLower = searchQuery.toLowerCase();
-      const nameMatch = driver.name.toLowerCase().includes(searchLower);
-      const plateMatch = driver.plateNumber.toLowerCase().includes(searchLower);
-      const seatsMatch = driver.totalSeats - driver.occupiedSeats >= minSeats;
-      const typeMatch =
-        tricycleFilter === "all" || driver.tricycleType === tricycleFilter;
+    return drivers
+      .filter((driver) => {
+        const searchLower = searchQuery.toLowerCase();
+        const nameMatch = driver.name.toLowerCase().includes(searchLower);
+        const plateMatch = driver.plateNumber
+          .toLowerCase()
+          .includes(searchLower);
+        const seatsMatch = driver.totalSeats - driver.occupiedSeats >= minSeats;
+        const typeMatch =
+          tricycleFilter === "all" || driver.tricycleType === tricycleFilter;
 
-      return (nameMatch || plateMatch) && seatsMatch && typeMatch;
-    }).sort((a, b) => {
-      if (sort === "nearest") return a.distance - b.distance;
-      if (sort === "seats")
-        return (
-          b.totalSeats - b.occupiedSeats - (a.totalSeats - a.occupiedSeats)
-        );
-      if (sort === "fare") return a.fare - b.fare;
-      return 0;
-    });
-  }, [searchQuery, sort, minSeats, tricycleFilter]);
+        return (nameMatch || plateMatch) && seatsMatch && typeMatch;
+      })
+      .sort((a, b) => {
+        if (sort === "nearest") return a.distance - b.distance;
+        if (sort === "seats")
+          return (
+            b.totalSeats - b.occupiedSeats - (a.totalSeats - a.occupiedSeats)
+          );
+        if (sort === "fare") return a.fare - b.fare;
+        return 0;
+      });
+  }, [drivers, searchQuery, sort, minSeats, tricycleFilter]);
 
   const seatsLeft = (driver: Driver) =>
     driver.totalSeats - driver.occupiedSeats;

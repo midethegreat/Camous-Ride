@@ -22,9 +22,9 @@ import {
   ArrowLeft,
   Banknote,
 } from "lucide-react-native";
-import { useAuth } from "@/_providers/AuthProvider";
+import { useAuth } from "@/providers/AuthProvider";
 
-import { API_URL } from "@/_constants/apiConfig";
+import { API_URL } from "@/constants/apiConfig";
 
 const Colors = {
   background: "#F3F4F6",

@@ -23,11 +23,11 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
-import { API_URL } from "@/_constants/apiConfig";
-import { CAMPUS_LOCATIONS, CAMPUS_CENTER } from "@/_constants/campus";
-import LeafletMap from "@/_components/LeafletMap";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
+import { API_URL } from "@/constants/apiConfig";
+import { CAMPUS_LOCATIONS, CAMPUS_CENTER } from "@/constants/campus";
+import ProfessionalMap from "@/components/ProfessionalMap";
 
 type BookingState =
   | "confirm"
@@ -592,12 +592,11 @@ export default function BookingConfirmScreen() {
       {state === "enroute" && (
         <View style={styles.enrouteContainer}>
           {Platform.OS !== "web" ? (
-            <LeafletMap
+            <ProfessionalMap
               pickup={pickupLoc}
               destination={destLoc}
               center={pickupLoc}
               locations={CAMPUS_LOCATIONS}
-              zoom={15}
             />
           ) : (
             <View style={styles.webEnrouteMap}>

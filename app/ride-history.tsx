@@ -18,15 +18,39 @@ import {
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { MOCK_RIDES } from "@/_mocks/data";
-import DrawerMenu from "@/_components/DrawerMenu";
-import Header from "@/_components/Header";
+import Colors from "@/constants/Colors";
+import DrawerMenu from "@/components/DrawerMenu";
+import Header from "@/components/Header";
+import { useAuth } from "@/providers/AuthProvider";
+import { API_URL } from "@/constants/apiConfig";
+import { Ride } from "@/types";
 
 export default function RideHistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
   const [drawerOpen, setDrawerOpen] = React.useState<boolean>(false);
+  const [rides, setRides] = React.useState<Ride[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    fetchRides();
+  }, [user]);
+
+  const fetchRides = async () => {
+    if (!user) return;
+    try {
+      const res = await fetch(`${API_URL}/api/rides/user/${user.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setRides(data);
+      }
+    } catch (e) {
+      console.error("Failed to fetch rides:", e);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     if (status === "completed") return Colors.green;
@@ -40,21 +64,35 @@ export default function RideHistoryScreen() {
     return Colors.accentLight;
   };
 
-  const handleCompleteRide = (rideId: string) => {
-    // This is a mock function for testing purposes as we are using mock data.
-    // In a real app, this would make an API call to update the ride status
-    // and then refresh the data.
-    Alert.alert(
-      "Ride Completed",
-      `Ride with ID ${rideId} has been marked as completed.`,
-    );
+  const handleCompleteRide = async (rideId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/api/rides/${rideId}/complete`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${await AsyncStorage.getItem("token")}`,
+        },
+      });
+
+      if (response.ok) {
+        Alert.alert("Ride Completed", "Ride has been successfully completed.");
+        // Refresh ride history
+        loadRideHistory();
+      } else {
+        const error = await response.json();
+        Alert.alert("Error", error.message || "Failed to complete ride.");
+      }
+    } catch (error) {
+      console.error("Error completing ride:", error);
+      Alert.alert("Error", "Failed to complete ride. Please try again.");
+    }
   };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <Header
         title="Ride History"
-        subtitle="YOUR RECENT CAMPUS TRIPS"
+        subtitle="YOUR RECENT COLISDAV TRIPS"
         onMenuPress={() => setDrawerOpen(true)}
       />
 
@@ -63,79 +101,95 @@ export default function RideHistoryScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {MOCK_RIDES.map((ride) => (
-          <View key={ride.id} style={styles.rideCard}>
-            <View style={styles.cardTop}>
-              <View style={styles.dateRow}>
-                <Calendar size={14} color={Colors.gray} />
-                <Text style={styles.dateText}>{ride.date}</Text>
-              </View>
-              <View
-                style={[
-                  styles.statusBadge,
-                  { backgroundColor: getStatusBg(ride.status) },
-                ]}
-              >
-                <Text
+        {loading ? (
+          <Text style={{ textAlign: "center", marginTop: 20 }}>Loading...</Text>
+        ) : rides.length === 0 ? (
+          <Text
+            style={{ textAlign: "center", marginTop: 20, color: Colors.gray }}
+          >
+            No rides found
+          </Text>
+        ) : (
+          rides.map((ride) => (
+            <View key={ride.id} style={styles.rideCard}>
+              <View style={styles.cardTop}>
+                <View style={styles.dateRow}>
+                  <Calendar size={14} color={Colors.gray} />
+                  <Text style={styles.dateText}>
+                    {ride.date || new Date(ride.startedAt).toLocaleString()}
+                  </Text>
+                </View>
+                <View
                   style={[
-                    styles.statusText,
-                    { color: getStatusColor(ride.status) },
+                    styles.statusBadge,
+                    { backgroundColor: getStatusBg(ride.status) },
                   ]}
                 >
-                  {ride.status.toUpperCase()}
-                </Text>
+                  <Text
+                    style={[
+                      styles.statusText,
+                      { color: getStatusColor(ride.status) },
+                    ]}
+                  >
+                    {ride.status.toUpperCase()}
+                  </Text>
+                </View>
               </View>
-            </View>
 
-            <View style={styles.routeSection}>
-              <View style={styles.routeItem}>
-                <View style={styles.pickupDot} />
-                <Text style={styles.routeText}>{ride.pickupLocation}</Text>
+              <View style={styles.routeSection}>
+                <View style={styles.routeItem}>
+                  <View style={styles.pickupDot} />
+                  <Text style={styles.routeText}>
+                    {ride.pickupLocation || ride.origin}
+                  </Text>
+                </View>
+                <View style={styles.routeItem}>
+                  <View style={styles.destDot} />
+                  <Text style={styles.routeText}>{ride.destination}</Text>
+                </View>
               </View>
-              <View style={styles.routeItem}>
-                <View style={styles.destDot} />
-                <Text style={styles.routeText}>{ride.destination}</Text>
-              </View>
-            </View>
 
-            <View style={styles.cardBottom}>
-              <View style={styles.fareRow}>
-                <CreditCard size={14} color={Colors.gray} />
-                <Text style={styles.fareText}>₦{ride.fare}</Text>
+              <View style={styles.cardBottom}>
+                <View style={styles.fareRow}>
+                  <CreditCard size={14} color={Colors.gray} />
+                  <Text style={styles.fareText}>₦{ride.fare}</Text>
+                </View>
+                {ride.status !== "completed" && ride.status !== "cancelled" && (
+                  <TouchableOpacity
+                    style={styles.completeBtn}
+                    onPress={() => handleCompleteRide(ride.id)}
+                  >
+                    <Text style={styles.completeBtnText}>COMPLETE RIDE</Text>
+                  </TouchableOpacity>
+                )}
+                {ride.status === "completed" && (
+                  <TouchableOpacity
+                    style={styles.receiptBtn}
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      router.push({
+                        pathname: "/receipt" as never,
+                        params: {
+                          txId: ride.txId,
+                          fare: ride.fare.toString(),
+                          pickup: ride.pickupLocation || ride.origin,
+                          destination: ride.destination,
+                          date:
+                            ride.date ||
+                            new Date(ride.startedAt).toLocaleString(),
+                          status: ride.status,
+                        },
+                      });
+                    }}
+                  >
+                    <Text style={styles.receiptText}>RECEIPT</Text>
+                    <ChevronRight size={14} color={Colors.primary} />
+                  </TouchableOpacity>
+                )}
               </View>
-              {ride.status !== "completed" && ride.status !== "cancelled" && (
-                <TouchableOpacity
-                  style={styles.completeBtn}
-                  onPress={() => handleCompleteRide(ride.id)}
-                >
-                  <Text style={styles.completeBtnText}>COMPLETE RIDE</Text>
-                </TouchableOpacity>
-              )}
-              {ride.status === "completed" && (
-                <TouchableOpacity
-                  style={styles.receiptBtn}
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    router.push({
-                      pathname: "/receipt" as never,
-                      params: {
-                        txId: ride.txId,
-                        fare: ride.fare.toString(),
-                        pickup: ride.pickupLocation,
-                        destination: ride.destination,
-                        date: ride.date,
-                        status: ride.status,
-                      },
-                    });
-                  }}
-                >
-                  <Text style={styles.receiptText}>RECEIPT</Text>
-                  <ChevronRight size={14} color={Colors.primary} />
-                </TouchableOpacity>
-              )}
             </View>
-          </View>
-        ))}
+          ))
+        )}
       </ScrollView>
 
       <DrawerMenu visible={drawerOpen} onClose={() => setDrawerOpen(false)} />

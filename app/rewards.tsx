@@ -18,14 +18,16 @@ import {
   Trophy,
   ChevronRight,
   Bell,
+  Ticket as VoucherIcon,
 } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import { useAuth } from "@/_providers/AuthProvider";
-import DrawerMenu from "@/_components/DrawerMenu";
-import { MOCK_VOUCHERS } from "@/_mocks/data";
-import Header from "@/_components/Header";
+import Colors from "@/constants/Colors";
+import { useAuth } from "@/providers/AuthProvider";
+import DrawerMenu from "@/components/DrawerMenu";
+import Header from "@/components/Header";
+import { API_URL } from "@/constants/apiConfig";
+import { Voucher } from "@/types";
 
 const REWARD_TIERS = [
   {
@@ -123,7 +125,39 @@ export default function RewardsScreen() {
   const insets = useSafeAreaInsets();
   const { user } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [loading, setLoading] = useState(true);
   const progressAnim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    fetchVouchers();
+  }, []);
+
+  const fetchVouchers = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/vouchers`);
+
+      // Check if response is JSON before parsing
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        console.warn("Vouchers API returned non-JSON response");
+        setVouchers([]);
+        return;
+      }
+
+      if (res.ok) {
+        const data = await res.json();
+        setVouchers(data);
+      } else {
+        setVouchers([]);
+      }
+    } catch (e) {
+      console.error("Failed to fetch vouchers:", e);
+      setVouchers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const totalRides = 12;
   const currentTier =
@@ -230,28 +264,36 @@ export default function RewardsScreen() {
           ))}
         </View>
 
-        <Text style={styles.sectionTitle}>ACTIVE VOUCHERS</Text>
-        <View style={styles.voucherList}>
-          {MOCK_VOUCHERS.map((v) => (
-            <View key={v.id} style={styles.voucherCard}>
-              <View style={styles.voucherLeft}>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>My Vouchers</Text>
+            <TouchableOpacity onPress={fetchVouchers}>
+              <Text style={styles.seeAll}>Refresh</Text>
+            </TouchableOpacity>
+          </View>
+          {vouchers.length === 0 ? (
+            <View style={styles.emptyVouchers}>
+              <Text style={styles.emptyText}>No vouchers available</Text>
+            </View>
+          ) : (
+            vouchers.map((v) => (
+              <View key={v.id} style={styles.voucherCard}>
                 <View style={styles.voucherIcon}>
-                  <Ticket size={18} color={Colors.primary} />
+                  <Ticket size={24} color={Colors.primary} />
                 </View>
-                <View>
+                <View style={styles.voucherInfo}>
                   <Text style={styles.voucherCode}>{v.code}</Text>
                   <Text style={styles.voucherDesc}>{v.description}</Text>
+                  <Text style={styles.voucherExpiry}>
+                    Expires: {v.expiresAt}
+                  </Text>
+                </View>
+                <View style={styles.voucherAmount}>
+                  <Text style={styles.discountText}>₦{v.discount}</Text>
                 </View>
               </View>
-              <View style={styles.voucherRight}>
-                <Text style={styles.voucherDiscount}>-₦{v.discount}</Text>
-                <View style={styles.voucherExpiry}>
-                  <Clock size={10} color={Colors.lightGray} />
-                  <Text style={styles.voucherExpiryText}>{v.expiresAt}</Text>
-                </View>
-              </View>
-            </View>
-          ))}
+            ))
+          )}
         </View>
 
         <Text style={styles.sectionTitle}>CHALLENGES</Text>

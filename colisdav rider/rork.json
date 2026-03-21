@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "CID Driver",
+      "path": "expo",
+      "framework": "react-native"
+    }
+  ]
+}

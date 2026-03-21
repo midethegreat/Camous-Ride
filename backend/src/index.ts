@@ -11,6 +11,8 @@ import transactionRoutes from "./routes/transactionRoutes";
 import rideRoutes from "./routes/rideRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import adminRoutes from "./routes/adminRoutes"; // Import admin routes
+import driverRoutes from "./routes/driverRoutes";
+import riderAuthRoutes from "./routes/riderAuthRoutes";
 import twoFaRoutes from "./routes/2fa.js";
 import bankRoutes from "./routes/bankRoutes";
 import cryptoRoutes from "./routes/cryptoRoutes";
@@ -18,6 +20,8 @@ import guestRoutes from "./routes/guestRoutes";
 import webhookRoutes from "./routes/webhookRoutes";
 import diagnosticsRoutes from "./routes/diagnostics";
 import fraudRoutes from "./routes/fraudRoutes";
+import voucherRoutes from "./routes/voucherRoutes";
+import chatRoutes from "./routes/chatRoutes";
 import { handleFlutterwaveWebhook } from "./controllers/webhookController";
 import { verifyFlutterwaveTransaction } from "./controllers/transactionController";
 dotenv.config();
@@ -47,12 +51,16 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/rides", rideRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/admin", adminRoutes); // Mount admin routes
+app.use("/api/drivers", driverRoutes);
+app.use("/api/riders", riderAuthRoutes);
 app.use("/api/2fa", twoFaRoutes);
 app.use("/api/bank", bankRoutes);
 app.use("/api/crypto", cryptoRoutes);
 app.use("/api/guests", guestRoutes);
 app.use("/api/diagnostics", diagnosticsRoutes);
 app.use("/api/fraud", fraudRoutes);
+app.use("/api/vouchers", voucherRoutes);
+app.use("/api/chat", chatRoutes);
 app.use("/webhooks", webhookRoutes);
 
 // Public aliases for external services and mobile clients

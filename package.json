@@ -1,6 +1,6 @@
 {
   "name": "expo-app",
-  "main": "expo-router/entry",
+  "main": "App.js",
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
@@ -44,7 +44,7 @@
     "react-dom": "19.1.0",
     "react-native": "0.81.5",
     "react-native-gesture-handler": "~2.28.0",
-    "react-native-get-random-values": "^2.0.0",
+    "react-native-get-random-values": "~1.11.0",
     "react-native-maps": "1.20.1",
     "react-native-qrcode-svg": "^6.3.21",
     "react-native-reanimated": "~4.1.1",
@@ -54,12 +54,13 @@
     "react-native-url-polyfill": "^3.0.0",
     "react-native-view-shot": "^4.0.3",
     "react-native-web": "^0.21.0",
-    "react-native-webview": "^13.15.0",
+    "react-native-webview": "13.15.0",
     "react-native-worklets": "0.5.1",
     "zustand": "^5.0.2"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
+    "@babel/plugin-transform-runtime": "^7.29.0",
     "@expo/cli": "^54.0.23",
     "@expo/ngrok": "^4.1.0",
     "@types/react": "~19.1.10",

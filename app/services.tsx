@@ -19,9 +19,9 @@ import {
   Bell,
 } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import Colors from "@/_constants/Colors";
-import DrawerMenu from "@/_components/DrawerMenu";
-import Header from "@/_components/Header";
+import Colors from "@/constants/Colors";
+import DrawerMenu from "@/components/DrawerMenu";
+import Header from "@/components/Header";
 
 const { width } = Dimensions.get("window");
 
@@ -33,8 +33,8 @@ const PLANNED_SERVICES = [
     icon: Truck,
   },
   {
-    title: "Errand Runner",
-    desc: "Get a student partner to help with errands across halls.",
+    title: "Deliveries",
+    desc: "Get a student partner to help with deliveries across halls.",
     tag: "SAFE",
     icon: Package,
   },
@@ -104,17 +104,38 @@ export default function ServicesScreen() {
         </View>
 
         {PLANNED_SERVICES.map((service, index) => (
-          <View key={index} style={styles.serviceCard}>
+          <TouchableOpacity
+            key={index}
+            style={styles.serviceCard}
+            onPress={() => {
+              if (service.title === "Food Delivery") {
+                router.push("/food-delivery");
+              } else {
+                // For other services, show coming soon alert
+                alert(`${service.title} is coming soon!`);
+              }
+            }}
+            activeOpacity={0.8}
+          >
             <View style={styles.serviceHeader}>
               <Text style={styles.serviceTitle}>{service.title}</Text>
-              <View style={styles.comingSoonBadge}>
-                <Clock size={10} color={Colors.primary} />
-                <Text style={styles.comingSoonText}>COMING SOON</Text>
-              </View>
+              {service.title !== "Food Delivery" && (
+                <View style={styles.comingSoonBadge}>
+                  <Clock size={10} color={Colors.primary} />
+                  <Text style={styles.comingSoonText}>COMING SOON</Text>
+                </View>
+              )}
             </View>
             <Text style={styles.serviceDesc}>{service.desc}</Text>
-            <Text style={styles.serviceTag}>{service.tag}</Text>
-          </View>
+            <Text
+              style={[
+                styles.serviceTag,
+                service.title === "Food Delivery" && { color: Colors.primary },
+              ]}
+            >
+              {service.title === "Food Delivery" ? "AVAILABLE" : service.tag}
+            </Text>
+          </TouchableOpacity>
         ))}
       </ScrollView>
 

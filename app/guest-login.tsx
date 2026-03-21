@@ -1,10 +1,17 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  Alert,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import Colors from "@/_constants/Colors";
-import { API_URL } from "@/_constants/apiConfig";
+import Colors from "@/constants/Colors";
+import { API_URL } from "@/constants/apiConfig";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function GuestLogin() {
@@ -21,34 +28,28 @@ export default function GuestLogin() {
     }
     try {
       setLoading(true);
-      const res = await fetch(`${API_URL}/api/guests/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.message || "Login failed.");
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      await AsyncStorage.setItem("cid_guest_auth", "true");
-      if (data?.user && data.user.email) {
-        const prev = await AsyncStorage.getItem("cid_guest_profile").catch(
-          () => null,
-        );
-        const prevJson = prev ? JSON.parse(prev) : {};
+      // Mock guest login
+      await new Promise((resolve) => setTimeout(resolve, 800));
+
+      if (email === "test@test.com" && password === "password") {
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        await AsyncStorage.setItem("cid_guest_auth", "true");
         const nextProfile = {
-          fullName: data.user.fullName || prevJson.fullName || "",
-          email: data.user.email || prevJson.email || email,
-          bio: prevJson.bio || "",
-          phoneNumber: prevJson.phoneNumber || "",
-          gender: prevJson.gender || "",
-          employmentStatus: prevJson.employmentStatus || "",
+          fullName: "Guest User",
+          email: email,
+          bio: "Just a guest",
+          phoneNumber: "+234 000 000 0000",
+          gender: "Male",
+          employmentStatus: "Guest",
         };
         await AsyncStorage.setItem(
           "cid_guest_profile",
           JSON.stringify(nextProfile),
         );
+        router.replace("/" as never);
+      } else {
+        throw new Error("Invalid guest credentials (MOCK: test@test.com / password)");
       }
-      router.replace("/" as never);
     } catch (e: any) {
       Alert.alert("Error", e?.message || "Login failed.");
     } finally {
@@ -57,7 +58,12 @@ export default function GuestLogin() {
   };
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top + 16, paddingHorizontal: 20 }]}>
+    <View
+      style={[
+        styles.container,
+        { paddingTop: insets.top + 16, paddingHorizontal: 20 },
+      ]}
+    >
       <Text style={styles.title}>Guest Login</Text>
       <Text style={styles.label}>EMAIL</Text>
       <TextInput
@@ -85,14 +91,22 @@ export default function GuestLogin() {
         disabled={loading}
         activeOpacity={0.85}
       >
-        <Text style={styles.buttonText}>{loading ? "Signing in..." : "Sign In"}</Text>
+        <Text style={styles.buttonText}>
+          {loading ? "Signing in..." : "Sign In"}
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={{ alignItems: "center", paddingVertical: 10 }}
         onPress={() => router.push("/support-hub" as never)}
         activeOpacity={0.75}
       >
-        <Text style={{ color: Colors.gray, textDecorationLine: "underline", fontWeight: "700" as const }}>
+        <Text
+          style={{
+            color: Colors.gray,
+            textDecorationLine: "underline",
+            fontWeight: "700" as const,
+          }}
+        >
           Forgot password?
         </Text>
       </TouchableOpacity>
