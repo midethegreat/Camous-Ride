@@ -13,7 +13,7 @@ import notificationRoutes from "./routes/notificationRoutes";
 import adminRoutes from "./routes/adminRoutes"; // Import admin routes
 import driverRoutes from "./routes/driverRoutes";
 import riderAuthRoutes from "./routes/riderAuthRoutes";
-import twoFaRoutes from "./routes/2fa.js";
+import twoFaRoutes from "./routes/twoFaRoutes";
 import bankRoutes from "./routes/bankRoutes";
 import cryptoRoutes from "./routes/cryptoRoutes";
 import guestRoutes from "./routes/guestRoutes";

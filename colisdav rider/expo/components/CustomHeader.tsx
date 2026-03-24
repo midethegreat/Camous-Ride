@@ -9,12 +9,16 @@ interface CustomHeaderProps {
   title?: string;
   showBackButton?: boolean;
   onBackPress?: () => void;
+  leftIcon?: React.ReactNode;
+  onLeftIconPress?: () => void;
 }
 
 const CustomHeader: React.FC<CustomHeaderProps> = ({
-  title = "Colisdav",
+  title = "",
   showBackButton = false,
   onBackPress,
+  leftIcon,
+  onLeftIconPress,
 }) => {
   const insets = useSafeAreaInsets();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
@@ -31,26 +35,36 @@ const CustomHeader: React.FC<CustomHeaderProps> = ({
     <>
       <View style={[styles.headerContainer, { paddingTop: insets.top + 10 }]}>
         <View style={styles.headerContent}>
-          {showBackButton ? (
-            <TouchableOpacity style={styles.iconButton} onPress={onBackPress}>
-              <ChevronRight
-                size={24}
-                color={Colors.text}
-                style={styles.backIcon}
-              />
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity
-              style={styles.iconButton}
-              onPress={handleMenuPress}
-            >
-              <Menu size={24} color={Colors.text} />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity style={styles.iconButton} onPress={handleMenuPress}>
+            <Menu size={24} color={Colors.text} />
+          </TouchableOpacity>
 
-          <Text style={styles.headerTitle}>{title}</Text>
+          <View style={styles.titleContainer}>
+            <Text style={styles.headerTitle} numberOfLines={1}>
+              {title}
+            </Text>
+          </View>
 
-          <View style={styles.rightSpacer} />
+          <View style={styles.rightContainer}>
+            {showBackButton ? (
+              <TouchableOpacity style={styles.iconButton} onPress={onBackPress}>
+                <ChevronRight
+                  size={24}
+                  color={Colors.text}
+                  style={styles.backIcon}
+                />
+              </TouchableOpacity>
+            ) : leftIcon ? (
+              <TouchableOpacity
+                style={styles.iconButton}
+                onPress={onLeftIconPress}
+              >
+                {leftIcon}
+              </TouchableOpacity>
+            ) : (
+              <View style={styles.rightSpacer} />
+            )}
+          </View>
         </View>
       </View>
 
@@ -78,6 +92,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     height: 56,
   },
+  rightContainer: {
+    width: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   iconButton: {
     width: 40,
     height: 40,
@@ -89,12 +108,17 @@ const styles = StyleSheet.create({
   backIcon: {
     transform: [{ rotate: "180deg" }],
   },
+  titleContainer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+  },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "600",
+    fontWeight: "700",
     color: Colors.text,
     textAlign: "center",
-    flex: 1,
   },
   rightSpacer: {
     width: 40,

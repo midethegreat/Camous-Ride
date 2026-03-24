@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 import Colors from "@/constants/Colors";
 import { useNotifications } from "@/providers/NotificationProvider";
 import { BellDot, Bell, CheckCheck, Trash2 } from "lucide-react-native";
@@ -41,6 +42,8 @@ const NotificationsScreen = () => {
     markAllAsRead,
     deleteNotification,
     fetchNotifications,
+    restoreDeletedNotifications,
+    clearAllNotifications,
   } = useNotifications();
   console.log("Notifications on screen:", notifications);
   const [refreshing, setRefreshing] = useState(false);
@@ -89,6 +92,30 @@ const NotificationsScreen = () => {
             await Promise.all(deletePromises);
 
             // Exit selection mode
+            setSelectedNotifications(new Set());
+            setIsSelectionMode(false);
+          },
+        },
+      ],
+    );
+  };
+
+  const handleRestoreDeleted = async () => {
+    await restoreDeletedNotifications();
+    Alert.alert("Success", "Deleted notifications have been restored.");
+  };
+
+  const handleClearAll = () => {
+    Alert.alert(
+      "Clear All Notifications",
+      "Are you sure you want to permanently clear all notifications? This action cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Clear All",
+          style: "destructive",
+          onPress: async () => {
+            await clearAllNotifications();
             setSelectedNotifications(new Set());
             setIsSelectionMode(false);
           },
@@ -255,12 +282,30 @@ const NotificationsScreen = () => {
             />
           </TouchableOpacity>
         ) : (
-          <TouchableOpacity
-            onPress={handleMarkAllRead}
-            style={styles.markAllButton}
-          >
-            <CheckCheck size={22} color={Colors.primary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity
+              onPress={handleMarkAllRead}
+              style={styles.markAllButton}
+            >
+              <CheckCheck size={22} color={Colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerButton}
+              onPress={() => {
+                Alert.alert("Notification Options", "Choose an action:", [
+                  { text: "Restore Deleted", onPress: handleRestoreDeleted },
+                  {
+                    text: "Clear All",
+                    onPress: handleClearAll,
+                    style: "destructive",
+                  },
+                  { text: "Cancel", style: "cancel" },
+                ]);
+              }}
+            >
+              <FontAwesome name="ellipsis-v" size={20} color={Colors.dark} />
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
@@ -280,6 +325,10 @@ const NotificationsScreen = () => {
           <Text style={styles.emptyText}>No notifications yet.</Text>
           <Text style={styles.emptySubText}>
             We&apos;ll let you know when something important happens.
+          </Text>
+          <Text style={styles.emptyInfo}>
+            Notifications are saved locally and won&apos;t disappear
+            automatically.
           </Text>
         </View>
       )}
@@ -416,11 +465,19 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: Colors.darkGray,
     marginTop: 16,
-  },
-  emptySubText: {
-    fontSize: 14,
-    color: Colors.gray,
-    textAlign: "center",
+    emptySubText: {
+      fontSize: 14,
+      color: Colors.gray,
+      textAlign: "center",
+    },
+    emptyInfo: {
+      fontSize: 12,
+      color: Colors.gray,
+      marginTop: 8,
+      textAlign: "center",
+      lineHeight: 18,
+      opacity: 0.8,
+    },
     marginTop: 8,
   },
 });

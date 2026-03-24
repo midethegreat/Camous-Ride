@@ -10,6 +10,7 @@ import {
   Dimensions,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import {
   MapPin,
   Clock,
@@ -19,8 +20,11 @@ import {
   CheckCircle,
   Navigation,
   User,
+  ArrowLeft,
 } from "lucide-react-native";
 import Colors from "@/constants/Colors";
+import { useCart } from "@/providers/CartProvider";
+import { useNotifications } from "@/providers/NotificationProvider";
 
 const { width } = Dimensions.get("window");
 
@@ -36,19 +40,6 @@ interface Rider {
   phone: string;
   isAvailable: boolean;
   currentLocation: string;
-}
-
-interface OrderDetails {
-  id: string;
-  restaurantName: string;
-  totalAmount: number;
-  estimatedDeliveryTime: string;
-  deliveryAddress: string;
-  items: Array<{
-    name: string;
-    quantity: number;
-    price: number;
-  }>;
 }
 
 const mockRiders: Rider[] = [
@@ -80,133 +71,91 @@ const mockRiders: Rider[] = [
     isAvailable: true,
     currentLocation: "Library area",
   },
-  {
-    id: "3",
-    name: "Mike Wilson",
-    photo:
-      "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-    rating: 4.6,
-    distance: "1.2 km",
-    eta: "7 min",
-    vehicleType: "Motorcycle",
-    vehicleNumber: "DEF-789",
-    phone: "+234-456-789-0123",
-    isAvailable: false,
-    currentLocation: "Delivering nearby",
-  },
 ];
 
-interface RiderAssignmentProps {
-  orderDetails: OrderDetails;
-  onRiderSelected: (rider: Rider) => void;
-  onBack: () => void;
-}
-
-export default function RiderAssignment({
-  orderDetails,
-  onRiderSelected,
-  onBack,
-}: RiderAssignmentProps) {
+export default function RiderAssignmentScreen() {
+  const router = useRouter();
+  const { totalAmount, clearCart } = useCart();
+  const { addNotification } = useNotifications();
+  const [status, setStatus] = useState<"searching" | "matching" | "accepted">(
+    "searching",
+  );
+  const [searchingText, setSearchingText] = useState(
+    "Looking for nearby riders...",
+  );
   const [selectedRider, setSelectedRider] = useState<Rider | null>(null);
-  const [isAssigning, setIsAssigning] = useState(false);
-  const [assignmentComplete, setAssignmentComplete] = useState(false);
 
-  const availableRiders = mockRiders.filter((rider) => rider.isAvailable);
+  useEffect(() => {
+    // Phase 1: Searching for multiple riders
+    const phases = [
+      { text: "Contacting nearby riders...", delay: 2000 },
+      { text: "3 riders found nearby...", delay: 4000 },
+      { text: "Waiting for a rider to accept...", delay: 6000 },
+    ];
 
-  const handleRiderSelect = async (rider: Rider) => {
-    setSelectedRider(rider);
-    setIsAssigning(true);
-
-    // Simulate assignment process
-    setTimeout(() => {
-      setIsAssigning(false);
-      setAssignmentComplete(true);
-
-      // Notify parent component
+    phases.forEach((phase, index) => {
       setTimeout(() => {
-        onRiderSelected(rider);
+        setSearchingText(phase.text);
+        if (index === 1) {
+          setStatus("matching");
+          addNotification(
+            "Riders Found!",
+            "We've found 3 riders nearby. Waiting for one to accept your order.",
+          );
+        }
+      }, phase.delay);
+    });
+
+    // Phase 2: A rider finally accepts
+    const acceptTimeout = setTimeout(() => {
+      const rider = mockRiders[Math.floor(Math.random() * mockRiders.length)];
+      setSelectedRider(rider);
+      setStatus("accepted");
+
+      addNotification(
+        "Rider Assigned",
+        `${rider.name} has accepted your order and is heading to the restaurant.`,
+      );
+
+      // Phase 3: Navigate to live tracking
+      const trackTimeout = setTimeout(() => {
+        clearCart();
+        router.replace({
+          pathname: "/live-tracking",
+          params: { riderId: rider.id },
+        } as any);
       }, 2000);
-    }, 2000);
-  };
 
-  const renderRiderCard = (rider: Rider) => {
-    const isSelected = selectedRider?.id === rider.id;
-    const isAssigned = assignmentComplete && isSelected;
+      return () => clearTimeout(trackTimeout);
+    }, 8000);
 
+    return () => {
+      clearTimeout(acceptTimeout);
+    };
+  }, []);
+
+  if (status === "searching" || status === "matching") {
     return (
-      <TouchableOpacity
-        key={rider.id}
-        style={[
-          styles.riderCard,
-          isSelected && styles.riderCardSelected,
-          isAssigned && styles.riderCardAssigned,
-        ]}
-        onPress={() => handleRiderSelect(rider)}
-        disabled={isAssigning || assignmentComplete}
-      >
-        <View style={styles.riderHeader}>
-          <Image source={{ uri: rider.photo }} style={styles.riderPhoto} />
-          <View style={styles.riderInfo}>
-            <Text style={styles.riderName}>{rider.name}</Text>
-            <View style={styles.ratingContainer}>
-              <Star size={14} color="#FFD700" fill="#FFD700" />
-              <Text style={styles.ratingText}>{rider.rating}</Text>
-            </View>
-          </View>
-          {isAssigned && (
-            <CheckCircle size={24} color={Colors.green} fill={Colors.green} />
-          )}
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+          >
+            <ArrowLeft size={24} color={Colors.dark} />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Finding a Rider</Text>
+          <View style={{ width: 40 }} />
         </View>
 
-        <View style={styles.riderDetails}>
-          <View style={styles.detailRow}>
-            <Navigation size={16} color={Colors.gray} />
-            <Text style={styles.detailText}>
-              {rider.distance} • {rider.eta}
-            </Text>
+        <View style={styles.searchingContent}>
+          <View style={styles.pulseContainer}>
+            <ActivityIndicator size="large" color={Colors.primary} />
           </View>
-          <View style={styles.detailRow}>
-            <MapPin size={16} color={Colors.gray} />
-            <Text style={styles.detailText}>{rider.currentLocation}</Text>
-          </View>
-          <View style={styles.detailRow}>
-            <User size={16} color={Colors.gray} />
-            <Text style={styles.detailText}>
-              {rider.vehicleType} • {rider.vehicleNumber}
-            </Text>
-          </View>
-        </View>
-
-        {isSelected && isAssigning && (
-          <View style={styles.assigningOverlay}>
-            <ActivityIndicator size="large" color={Colors.white} />
-            <Text style={styles.assigningText}>Assigning rider...</Text>
-          </View>
-        )}
-
-        {isAssigned && (
-          <View style={styles.assignedOverlay}>
-            <CheckCircle size={32} color={Colors.white} fill={Colors.white} />
-            <Text style={styles.assignedText}>Rider Assigned!</Text>
-          </View>
-        )}
-      </TouchableOpacity>
-    );
-  };
-
-  if (assignmentComplete && selectedRider) {
-    return (
-      <SafeAreaView style={styles.successContainer}>
-        <View style={styles.successContent}>
-          <View style={styles.successIcon}>
-            <CheckCircle size={80} color={Colors.green} fill={Colors.green} />
-          </View>
-          <Text style={styles.successTitle}>Rider Assigned Successfully!</Text>
-          <Text style={styles.successSubtitle}>
-            {selectedRider.name} will deliver your order
-          </Text>
-          <Text style={styles.successEta}>
-            Estimated arrival: {selectedRider.eta}
+          <Text style={styles.searchingTitle}>{searchingText}</Text>
+          <Text style={styles.searchingSubtitle}>
+            We're matching your order with the best available riders in your
+            area.
           </Text>
         </View>
       </SafeAreaView>
@@ -215,43 +164,60 @@ export default function RiderAssignment({
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={onBack}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+        >
+          <ArrowLeft size={24} color={Colors.dark} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Choose Your Rider</Text>
-        <View style={styles.headerSpacer} />
+        <Text style={styles.headerTitle}>Rider Found</Text>
+        <View style={{ width: 40 }} />
       </View>
 
-      {/* Order Summary */}
-      <View style={styles.orderSummary}>
-        <Text style={styles.orderTitle}>Order #{orderDetails.id}</Text>
-        <Text style={styles.orderRestaurant}>
-          {orderDetails.restaurantName}
-        </Text>
-        <Text style={styles.orderAmount}>
-          ₦{orderDetails.totalAmount.toFixed(2)}
-        </Text>
-        <Text style={styles.orderAddress}>{orderDetails.deliveryAddress}</Text>
-      </View>
+      <View style={styles.assignedContent}>
+        <View style={styles.riderCard}>
+          <Image
+            source={{ uri: selectedRider?.photo }}
+            style={styles.riderPhoto}
+          />
+          <Text style={styles.riderName}>{selectedRider?.name}</Text>
+          <View style={styles.ratingContainer}>
+            <Star size={16} color="#FFD700" fill="#FFD700" />
+            <Text style={styles.ratingText}>{selectedRider?.rating}</Text>
+          </View>
 
-      {/* Available Riders */}
-      <ScrollView style={styles.ridersContainer}>
-        <Text style={styles.sectionTitle}>
-          Available Riders ({availableRiders.length})
-        </Text>
-        {availableRiders.map(renderRiderCard)}
-      </ScrollView>
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>
+              {status === "assigned"
+                ? "Waiting for rider to accept..."
+                : "Rider Accepted!"}
+            </Text>
+          </View>
 
-      {isAssigning && (
-        <View style={styles.assigningFooter}>
-          <ActivityIndicator size="small" color={Colors.white} />
-          <Text style={styles.assigningFooterText}>
-            Please wait while we assign your rider...
-          </Text>
+          <View style={styles.detailsGrid}>
+            <View style={styles.detailItem}>
+              <Clock size={20} color={Colors.gray} />
+              <Text style={styles.detailValue}>{selectedRider?.eta}</Text>
+              <Text style={styles.detailLabel}>ETA</Text>
+            </View>
+            <View style={styles.detailItem}>
+              <Navigation size={20} color={Colors.gray} />
+              <Text style={styles.detailValue}>{selectedRider?.distance}</Text>
+              <Text style={styles.detailLabel}>Distance</Text>
+            </View>
+          </View>
         </View>
-      )}
+
+        {status === "accepted" && (
+          <View style={styles.successMessage}>
+            <CheckCircle size={40} color={Colors.green} />
+            <Text style={styles.successText}>
+              Ride accepted! Heading to pick up your order.
+            </Text>
+          </View>
+        )}
+      </View>
     </SafeAreaView>
   );
 }
@@ -259,13 +225,7 @@ export default function RiderAssignment({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
-  },
-  successContainer: {
-    flex: 1,
-    backgroundColor: Colors.background,
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "#F4F7F2",
   },
   header: {
     flexDirection: "row",
@@ -274,210 +234,133 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
     backgroundColor: Colors.white,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: "700",
     color: Colors.dark,
   },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: Colors.background,
+  searchingContent: {
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
+    padding: 30,
   },
-  backButtonText: {
-    fontSize: 20,
-    color: Colors.dark,
+  pulseContainer: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: "rgba(99, 115, 81, 0.1)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 40,
   },
-  headerSpacer: {
-    width: 40,
-  },
-  orderSummary: {
-    backgroundColor: Colors.white,
-    marginHorizontal: 20,
-    marginVertical: 16,
-    padding: 20,
-    borderRadius: 16,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-  },
-  orderTitle: {
-    fontSize: 14,
-    color: Colors.gray,
-    marginBottom: 4,
-  },
-  orderRestaurant: {
-    fontSize: 18,
+  searchingTitle: {
+    fontSize: 22,
     fontWeight: "700",
     color: Colors.dark,
-    marginBottom: 8,
+    textAlign: "center",
   },
-  orderAmount: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.primary,
-    marginBottom: 8,
-  },
-  orderAddress: {
-    fontSize: 14,
-    color: Colors.gray,
-    lineHeight: 20,
-  },
-  sectionTitle: {
+  searchingSubtitle: {
     fontSize: 16,
-    fontWeight: "600",
-    color: Colors.dark,
-    marginHorizontal: 20,
-    marginBottom: 16,
+    color: Colors.gray,
+    textAlign: "center",
+    marginTop: 12,
+    lineHeight: 24,
   },
-  ridersContainer: {
+  assignedContent: {
     flex: 1,
-    paddingHorizontal: 20,
+    padding: 20,
+    justifyContent: "center",
   },
   riderCard: {
     backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 12,
-    elevation: 2,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    borderWidth: 2,
-    borderColor: Colors.border,
-  },
-  riderCardSelected: {
-    borderColor: Colors.primary,
-    backgroundColor: Colors.primaryLight,
-  },
-  riderCardAssigned: {
-    borderColor: Colors.green,
-    backgroundColor: Colors.greenLight,
-  },
-  riderHeader: {
-    flexDirection: "row",
+    borderRadius: 30,
+    padding: 30,
     alignItems: "center",
-    marginBottom: 16,
+    elevation: 4,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
   },
   riderPhoto: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginRight: 16,
-  },
-  riderInfo: {
-    flex: 1,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    marginBottom: 16,
   },
   riderName: {
-    fontSize: 18,
+    fontSize: 24,
     fontWeight: "700",
     color: Colors.dark,
-    marginBottom: 4,
   },
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
+    marginTop: 8,
   },
   ratingText: {
-    fontSize: 14,
+    fontSize: 16,
+    fontWeight: "600",
     color: Colors.dark,
     marginLeft: 4,
-    fontWeight: "600",
   },
-  riderDetails: {
-    gap: 8,
+  statusBadge: {
+    backgroundColor: "#F3F4F6",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 20,
+    marginTop: 24,
   },
-  detailRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  detailText: {
+  statusText: {
     fontSize: 14,
-    color: Colors.gray,
-    lineHeight: 20,
-  },
-  assigningOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(27, 122, 67, 0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 16,
-  },
-  assigningText: {
-    fontSize: 16,
-    color: Colors.white,
-    fontWeight: "600",
-    marginTop: 12,
-  },
-  assignedOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(16, 185, 129, 0.9)",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: 16,
-  },
-  assignedText: {
-    fontSize: 18,
-    color: Colors.white,
-    fontWeight: "700",
-    marginTop: 12,
-  },
-  assigningFooter: {
-    backgroundColor: Colors.primary,
-    padding: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  assigningFooterText: {
-    fontSize: 14,
-    color: Colors.white,
-    fontWeight: "600",
-  },
-  successContent: {
-    alignItems: "center",
-    padding: 40,
-  },
-  successIcon: {
-    marginBottom: 24,
-  },
-  successTitle: {
-    fontSize: 24,
-    fontWeight: "700",
-    color: Colors.dark,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  successSubtitle: {
-    fontSize: 16,
-    color: Colors.gray,
-    marginBottom: 16,
-    textAlign: "center",
-    lineHeight: 24,
-  },
-  successEta: {
-    fontSize: 18,
     fontWeight: "600",
     color: Colors.primary,
-    textAlign: "center",
+  },
+  detailsGrid: {
+    flexDirection: "row",
+    width: "100%",
+    marginTop: 30,
+    paddingTop: 30,
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+  },
+  detailItem: {
+    flex: 1,
+    alignItems: "center",
+  },
+  detailValue: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: Colors.dark,
+    marginTop: 8,
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: Colors.gray,
+    marginTop: 4,
+  },
+  successMessage: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#ECFDF5",
+    padding: 20,
+    borderRadius: 20,
+    marginTop: 20,
+    gap: 12,
+  },
+  successText: {
+    flex: 1,
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#065F46",
   },
 });

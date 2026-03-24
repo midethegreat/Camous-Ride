@@ -2,10 +2,14 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Rider, RiderStatus, RiderKycStatus } from "../entities/Rider";
 import { sendOtpEmail } from "../utils/mailer";
+import { sendOTP } from "../services/twilioService";
 import jwt from "jsonwebtoken";
 
 const riderRepository = AppDataSource.getRepository(Rider);
-const JWT_SECRET = process.env.JWT_SECRET || "your-rider-secret-key";
+const JWT_SECRET =
+  process.env.RIDER_JWT_SECRET ||
+  process.env.JWT_SECRET ||
+  "your-rider-secret-key";
 
 // In-memory store for pending OTPs (before rider is created)
 const pendingOtps = new Map<string, { code: string; expiresAt: Date }>();
@@ -52,6 +56,41 @@ export class RiderAuthController {
       });
     } catch (error) {
       res.status(500).json({ message: "Failed to send OTP." });
+    }
+  }
+
+  /**
+   * @desc    Send OTP to phone for verification
+   * @route   POST /api/riders/send-sms-otp
+   */
+  static async sendSmsOtp(req: Request, res: Response) {
+    const { phoneNumber, email } = req.body;
+    if (!phoneNumber || !email) {
+      return res
+        .status(400)
+        .json({ message: "Phone number and email are required." });
+    }
+
+    try {
+      const code = generateOtp();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+
+      pendingOtps.set(email.toLowerCase().trim(), { code, expiresAt });
+
+      try {
+        await sendOTP(phoneNumber, code);
+      } catch (e) {
+        console.error("Failed to send SMS OTP:", e);
+      }
+
+      console.log(`📱 RIDER SMS OTP for ${phoneNumber}: ${code}`);
+      res.status(200).json({
+        message: "SMS OTP sent successfully.",
+        hint:
+          process.env.NODE_ENV !== "production" ? `DEV: ${code}` : undefined,
+      });
+    } catch (error) {
+      res.status(500).json({ message: "Failed to send SMS OTP." });
     }
   }
 

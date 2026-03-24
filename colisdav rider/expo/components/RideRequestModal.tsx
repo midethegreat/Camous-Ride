@@ -1,16 +1,18 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
-  Modal,
   TouchableOpacity,
-  Image,
   Dimensions,
+  Image,
+  Modal,
 } from "react-native";
-import { MapPin, Star, Flame, X } from "lucide-react-native";
+import { MapPin, Star, Flame, X, Crown } from "lucide-react-native";
+import * as Location from "expo-location";
 import { Colors } from "@/constants/color";
 import { BookingNotification } from "@/services/rideBookingService";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   PanGestureHandler,
   PanGestureHandlerGestureEvent,
@@ -25,7 +27,7 @@ import Animated, {
   Extrapolate,
 } from "react-native-reanimated";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 const SWIPE_THRESHOLD = width * 0.3;
 
 interface RideRequestModalProps {
@@ -36,6 +38,36 @@ interface RideRequestModalProps {
   onClose?: () => void; // Added optional close prop
 }
 
+// Utility function for reverse geocoding
+const getLocationName = async (
+  latitude: number,
+  longitude: number,
+): Promise<string> => {
+  try {
+    const [address] = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude,
+    });
+
+    if (address) {
+      const parts = [];
+      if (address.name && address.name !== address.street)
+        parts.push(address.name);
+      if (address.street) parts.push(address.street);
+      if (address.city) parts.push(address.city);
+      if (address.district) parts.push(address.district);
+
+      return parts.length > 0
+        ? parts.join(", ")
+        : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+    }
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  } catch (error) {
+    console.error("Reverse geocoding error:", error);
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  }
+};
+
 const RideRequestModal: React.FC<RideRequestModalProps> = ({
   isVisible,
   request,
@@ -43,7 +75,49 @@ const RideRequestModal: React.FC<RideRequestModalProps> = ({
   onDecline,
   onClose,
 }) => {
+  const { user } = useAuth();
+  const [pickupName, setPickupName] = useState(request?.pickupLocation || "");
+  const [dropoffName, setDropoffName] = useState(
+    request?.dropoffLocation || "",
+  );
+
+  useEffect(() => {
+    if (!request) return;
+
+    const resolveNames = async () => {
+      // Set initial names
+      setPickupName(request.pickupLocation);
+      setDropoffName(request.dropoffLocation);
+
+      // Regex for lat, lng format
+      const coordsRegex = /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/;
+      const pickupCoords = request.pickupLocation.match(coordsRegex);
+      const dropoffCoords = request.dropoffLocation.match(coordsRegex);
+
+      if (pickupCoords || dropoffCoords) {
+        if (pickupCoords) {
+          const name = await getLocationName(
+            parseFloat(pickupCoords[1]),
+            parseFloat(pickupCoords[2]),
+          );
+          setPickupName(name);
+        }
+        if (dropoffCoords) {
+          const name = await getLocationName(
+            parseFloat(dropoffCoords[1]),
+            parseFloat(dropoffCoords[2]),
+          );
+          setDropoffName(name);
+        }
+      }
+    };
+
+    resolveNames();
+  }, [request]);
+
   if (!request) return null;
+
+  const isPremium = user?.subscription?.type === "premium";
 
   const translateX = useSharedValue(0);
 
@@ -116,13 +190,23 @@ const RideRequestModal: React.FC<RideRequestModalProps> = ({
 
               {/* Top Header with Close Button */}
               <View style={styles.topHeader}>
-                <View style={styles.profitablyContainer}>
-                  <Text style={styles.profitablyText}>Profitably</Text>
-                  <Flame
-                    size={16}
-                    color={Colors.primary}
-                    fill={Colors.primary}
-                  />
+                <View style={styles.headerLeft}>
+                  <View style={styles.profitablyContainer}>
+                    <Text style={styles.profitablyText}>Profitably</Text>
+                    <Flame
+                      size={16}
+                      color={Colors.primary}
+                      fill={Colors.primary}
+                    />
+                  </View>
+                  {isPremium && (
+                    <View style={styles.priorityBadge}>
+                      <Crown size={12} color="white" fill="white" />
+                      <Text style={styles.priorityBadgeText}>
+                        Priority Match
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
                 <View style={styles.headerRight}>
@@ -175,14 +259,14 @@ const RideRequestModal: React.FC<RideRequestModalProps> = ({
                   <View style={styles.locationItem}>
                     <Text style={styles.locationLabel}>Pickup point</Text>
                     <Text style={styles.locationText} numberOfLines={1}>
-                      {request.pickupLocation}
+                      {pickupName}
                     </Text>
                   </View>
                   <View style={styles.locationDivider} />
                   <View style={styles.locationItem}>
                     <Text style={styles.locationLabel}>Pickout point</Text>
                     <Text style={styles.locationText} numberOfLines={1}>
-                      {request.dropoffLocation}
+                      {dropoffName}
                     </Text>
                   </View>
                 </View>
@@ -241,6 +325,25 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
     zIndex: 1, // Ensure header is above swipe background
+  },
+  headerLeft: {
+    gap: 8,
+  },
+  priorityBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: Colors.warning,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    gap: 4,
+    alignSelf: "flex-start",
+  },
+  priorityBadgeText: {
+    color: "white",
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
   headerRight: {
     flexDirection: "row",

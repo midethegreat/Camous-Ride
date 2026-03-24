@@ -22,8 +22,16 @@ class RideBookingService {
   private listeners: Array<(booking: BookingNotification) => void> = [];
   private activeBookings: Map<string, BookingNotification> = new Map();
   private bookingInterval: NodeJS.Timeout | null = null;
+  private frequencyMultiplier: number = 1.0;
 
   constructor() {
+    this.startSimulatingBookings();
+  }
+
+  // Update simulation frequency based on priority
+  setFrequencyMultiplier(multiplier: number) {
+    this.frequencyMultiplier = multiplier;
+    this.stopSimulatingBookings();
     this.startSimulatingBookings();
   }
 
@@ -48,7 +56,10 @@ class RideBookingService {
 
   // Simulate live bookings from user app
   private startSimulatingBookings() {
-    // Generate a booking every 10-30 seconds
+    // Generate a booking every 10-30 seconds (multiplied by frequencyMultiplier)
+    const baseInterval = 15000; // 15 seconds average
+    const interval = (baseInterval / this.frequencyMultiplier);
+
     this.bookingInterval = setInterval(
       () => {
         const shouldCreateBooking = Math.random() > 0.3; // 70% chance
@@ -57,8 +68,8 @@ class RideBookingService {
           this.createRandomBooking();
         }
       },
-      Math.random() * 20000 + 10000,
-    ); // 10-30 seconds
+      interval,
+    );
 
     // Create initial booking after 2 seconds
     setTimeout(() => this.createRandomBooking(), 2000);

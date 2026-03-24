@@ -11,7 +11,6 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   ArrowUpRight,
-  ArrowDownRight,
   Download,
   ChevronRight,
   TrendingUp,
@@ -135,58 +134,77 @@ export default function EarningsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Earnings</Text>
-        </View>
-
-        {/* Stats Row */}
-        <View style={styles.statsContainer}>
-          {/* Total Income Card */}
+        {/* Total Income Card */}
+        <View style={styles.walletSection}>
           <TouchableOpacity
-            style={[styles.statCard, styles.mainStatCard]}
+            style={styles.walletCard}
             onPress={handleWithdraw}
-            activeOpacity={0.7}
+            activeOpacity={0.9}
           >
-            <View style={styles.statHeader}>
-              <Text style={styles.statLabel}>Total Income</Text>
-              {!isKYCVerified && (
+            <View style={styles.walletHeader}>
+              <View>
+                <Text style={styles.walletLabel}>Total Balance</Text>
+                <Text style={styles.walletValue}>
+                  {formatCurrency(walletData.balance || 450.5)}
+                </Text>
+              </View>
+              {!isKYCVerified ? (
                 <View style={styles.lockedBadge}>
-                  <Text style={styles.lockedText}>LOCKED</Text>
+                  <Text style={styles.lockedText}>Unverified</Text>
+                </View>
+              ) : (
+                <View style={styles.verifiedBadge}>
+                  <Text style={styles.verifiedText}>Verified</Text>
                 </View>
               )}
             </View>
-            <Text style={styles.statValue}>
-              {formatCurrency(walletData.totalEarned || 634.99)}
-            </Text>
-            <View style={styles.trendContainer}>
-              <ArrowUpRight size={14} color={Colors.success} />
-              <Text style={styles.trendText}>
-                0.5% <Text style={styles.trendSubText}>than last month</Text>
-              </Text>
-            </View>
-          </TouchableOpacity>
 
-          <View style={styles.sideStats}>
-            {/* Total Order Card */}
-            <View style={styles.statCardSmall}>
-              <Text style={styles.statLabelSmall}>Total Order</Text>
-              <Text style={styles.statValueSmall}>380</Text>
-            </View>
-
-            {/* Ontime Delivery Card */}
-            <View style={styles.statCardSmall}>
-              <Text style={styles.statLabelSmall}>Ontime Delivery</Text>
-              <View style={styles.deliveryInfo}>
-                <TrendingUp size={16} color={Colors.success} />
-                <Text style={styles.statValueSmall}> 89%</Text>
+            <View style={styles.walletFooter}>
+              <View>
+                <Text style={styles.walletSubLabel}>Total Earned</Text>
+                <Text style={styles.walletSubValue}>
+                  {formatCurrency(walletData.totalEarned || 634.99)}
+                </Text>
+              </View>
+              <View style={styles.trendContainer}>
+                <ArrowUpRight size={16} color={Colors.success} />
+                <Text style={styles.trendText}>+0.5%</Text>
               </View>
             </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Stats Grid */}
+        <View style={styles.statsGrid}>
+          <View style={styles.statBox}>
+            <View style={[styles.statIcon, { backgroundColor: "#E0F2F1" }]}>
+              <Download size={20} color="#00796B" />
+            </View>
+            <Text style={styles.statBoxValue}>380</Text>
+            <Text style={styles.statBoxLabel}>Total Orders</Text>
+          </View>
+
+          <View style={styles.statBox}>
+            <View style={[styles.statIcon, { backgroundColor: "#FFF3E0" }]}>
+              <TrendingUp size={20} color="#E65100" />
+            </View>
+            <Text style={styles.statBoxValue}>89%</Text>
+            <Text style={styles.statBoxLabel}>On-time</Text>
+          </View>
+
+          <View style={styles.statBox}>
+            <View style={[styles.statIcon, { backgroundColor: "#F3E5F5" }]}>
+              <TrendingUp size={20} color="#7B1FA2" />
+            </View>
+            <Text style={styles.statBoxValue}>
+              {((user?.subscription?.commissionRate || 0.1) * 100).toFixed(0)}%
+            </Text>
+            <Text style={styles.statBoxLabel}>Commission</Text>
           </View>
         </View>
 
@@ -271,7 +289,7 @@ export default function EarningsScreen() {
           </View>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -294,95 +312,133 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 20,
-    paddingTop: 20,
+    paddingTop: 10,
     paddingBottom: 10,
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "800",
     color: Colors.text,
+    textAlign: "center",
   },
-  statsContainer: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    gap: 12,
-    marginBottom: 24,
+  walletSection: {
+    paddingHorizontal: 15,
+    marginTop: 8,
+    marginBottom: 15,
   },
-  statCard: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: 16,
-    padding: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
+  walletCard: {
+    backgroundColor: Colors.primary,
+    borderRadius: 20,
+    padding: 20,
+    shadowColor: Colors.primary,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.25,
+    shadowRadius: 15,
+    elevation: 8,
   },
-  mainStatCard: {
-    flex: 1.2,
-    justifyContent: "center",
-  },
-  sideStats: {
-    flex: 1,
-    gap: 12,
-  },
-  statCardSmall: {
-    backgroundColor: Colors.backgroundCard,
-    borderRadius: 16,
-    padding: 12,
-    flex: 1,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 2,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: Colors.textSecondary,
-  },
-  statHeader: {
+  walletHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 12,
+    alignItems: "flex-start",
+    marginBottom: 20,
   },
-  lockedBadge: {
-    backgroundColor: "rgba(220, 38, 38, 0.1)",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
+  walletLabel: {
+    color: "rgba(255,255,255,0.8)",
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 2,
   },
-  lockedText: {
-    color: Colors.error,
-    fontSize: 10,
+  walletValue: {
+    color: "white",
+    fontSize: 28,
     fontWeight: "800",
   },
-  statLabelSmall: {
+  walletFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+  },
+  walletSubLabel: {
+    color: "rgba(255,255,255,0.6)",
+    fontSize: 11,
+    marginBottom: 2,
+  },
+  walletSubValue: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  verifiedBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  verifiedText: {
+    color: "white",
     fontSize: 12,
-    color: Colors.textSecondary,
-    marginBottom: 4,
+    fontWeight: "700",
   },
-  statValue: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: Colors.text,
+  statsGrid: {
+    flexDirection: "row",
+    paddingHorizontal: 15,
+    gap: 12,
+    marginBottom: 20,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 14,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  statIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 8,
   },
-  statValueSmall: {
+  statBoxValue: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: "800",
     color: Colors.text,
+  },
+  statBoxLabel: {
+    fontSize: 11,
+    color: Colors.textSecondary,
+    marginTop: 1,
+  },
+  lockedBadge: {
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  lockedText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "700",
   },
   trendContainer: {
     flexDirection: "row",
     alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     gap: 4,
   },
   trendText: {
     fontSize: 12,
-    fontWeight: "600",
-    color: Colors.success,
+    fontWeight: "700",
+    color: "white",
   },
   trendSubText: {
     color: Colors.textMuted,
@@ -393,17 +449,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   section: {
-    paddingHorizontal: 20,
-    marginBottom: 24,
+    paddingHorizontal: 15,
+    marginBottom: 20,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: Colors.text,
   },
@@ -425,8 +481,8 @@ const styles = StyleSheet.create({
   chartContainer: {
     backgroundColor: Colors.white,
     borderRadius: 16,
-    padding: 20,
-    paddingBottom: 10,
+    padding: 15,
+    paddingBottom: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -437,32 +493,32 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "flex-end",
     justifyContent: "space-between",
-    height: chartHeight + 40,
+    height: chartHeight + 35,
   },
   chartBarWrapper: {
     alignItems: "center",
-    width: (_width - 80) / 7,
+    width: (_width - 70) / 7,
   },
   chartBarContainer: {
     height: chartHeight,
-    width: 14,
+    width: 12,
     backgroundColor: Colors.borderLight,
-    borderRadius: 7,
+    borderRadius: 6,
     justifyContent: "flex-end",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   chartBar: {
-    width: 14,
+    width: 12,
     backgroundColor: Colors.primary,
-    borderRadius: 7,
+    borderRadius: 6,
   },
   chartLabel: {
-    fontSize: 10,
+    fontSize: 9,
     color: Colors.textMuted,
     fontWeight: "600",
   },
   chartLabelSub: {
-    fontSize: 10,
+    fontSize: 9,
     color: Colors.textMuted,
   },
   showMoreText: {

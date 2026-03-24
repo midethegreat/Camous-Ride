@@ -10,6 +10,8 @@ import {
   Image,
   TextInput,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import {
   Camera,
@@ -165,18 +167,18 @@ export default function KYCVerificationScreen() {
     try {
       // 1. Simulate uploading to server
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      
+
       // 2. Update local profile state to "submitted"
       if (updateProfile) {
         await updateProfile({ kycStatus: "submitted" });
       }
-      
+
       Alert.alert(
-        "Verification Submitted", 
-        "Your documents have been sent to admin for preview. You will be notified once approved.", 
+        "Verification Submitted",
+        "Your documents have been sent to admin for preview. You will be notified once approved.",
         [
-          { 
-            text: "View Status", 
+          {
+            text: "View Status",
             onPress: () => {
               // 3. Simulate Admin Review & Auto-Approval after 5 seconds
               setTimeout(async () => {
@@ -185,10 +187,10 @@ export default function KYCVerificationScreen() {
                   console.log("Admin simulated: KYC Approved!");
                 }
               }, 5000);
-              router.replace("/(tabs)"); 
-            } 
+              router.replace("/(tabs)");
+            },
           },
-        ]
+        ],
       );
     } catch (error) {
       Alert.alert("Error", "Failed to submit documents. Please try again.");
@@ -391,9 +393,17 @@ export default function KYCVerificationScreen() {
         />
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {renderStep()}
-      </ScrollView>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          {renderStep()}
+        </ScrollView>
+      </KeyboardAvoidingView>
 
       <View style={styles.footer}>
         <TouchableOpacity
@@ -452,27 +462,28 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 25,
+    padding: 20,
   },
   stepContainer: {
     alignItems: "center",
+    width: "100%",
   },
   stepIcon: {
-    marginBottom: 20,
+    marginBottom: 15,
   },
   stepTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: "800",
     color: Colors.text,
     textAlign: "center",
-    marginBottom: 10,
+    marginBottom: 8,
   },
   stepDesc: {
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.textMuted,
     textAlign: "center",
-    lineHeight: 22,
-    marginBottom: 30,
+    lineHeight: 20,
+    marginBottom: 20,
   },
   inputWrapper: {
     width: "100%",
@@ -484,18 +495,18 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E5E7EB",
     borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
+    padding: 14,
+    fontSize: 15,
     color: Colors.text,
   },
   inputCheck: {
     position: "absolute",
     right: 16,
-    top: 18,
+    top: 16,
   },
   uploadBox: {
     width: "100%",
-    aspectRatio: 1.5,
+    aspectRatio: 1.6,
     backgroundColor: "#F9FAFB",
     borderWidth: 2,
     borderColor: "#E5E7EB",
@@ -506,8 +517,8 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   uploadText: {
-    marginTop: 10,
-    fontSize: 14,
+    marginTop: 8,
+    fontSize: 13,
     color: Colors.textMuted,
     fontWeight: "600",
   },
@@ -517,15 +528,15 @@ const styles = StyleSheet.create({
     resizeMode: "cover",
   },
   footer: {
-    padding: 20,
+    padding: 15,
     borderTopWidth: 1,
     borderTopColor: "#F3F4F6",
   },
   nextButton: {
     backgroundColor: Colors.primary,
     flexDirection: "row",
-    height: 56,
-    borderRadius: 16,
+    height: 52,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     gap: 8,

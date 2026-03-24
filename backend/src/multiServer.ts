@@ -11,7 +11,7 @@ import transactionRoutes from "./routes/transactionRoutes";
 import rideRoutes from "./routes/rideRoutes";
 import notificationRoutes from "./routes/notificationRoutes";
 import adminRoutes from "./routes/adminRoutes";
-import twoFaRoutes from "./routes/2fa.js";
+import twoFaRoutes from "./routes/twoFaRoutes";
 import bankRoutes from "./routes/bankRoutes";
 import cryptoRoutes from "./routes/cryptoRoutes";
 import guestRoutes from "./routes/guestRoutes";

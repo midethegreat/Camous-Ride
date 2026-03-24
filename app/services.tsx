@@ -27,16 +27,10 @@ const { width } = Dimensions.get("window");
 
 const PLANNED_SERVICES = [
   {
-    title: "Food Delivery",
-    desc: "Order from campus vendors like Motion Ground or Bukka.",
-    tag: "FAST",
-    icon: Truck,
-  },
-  {
     title: "Deliveries",
-    desc: "Get a student partner to help with deliveries across halls.",
-    tag: "SAFE",
-    icon: Package,
+    desc: "Order from campus vendors, supermarkets, or send items across halls.",
+    tag: "AVAILABLE",
+    icon: Truck,
   },
   {
     title: "Paper Courier",
@@ -108,8 +102,8 @@ export default function ServicesScreen() {
             key={index}
             style={styles.serviceCard}
             onPress={() => {
-              if (service.title === "Food Delivery") {
-                router.push("/food-delivery");
+              if (service.title === "Deliveries") {
+                router.push("/deliveries");
               } else {
                 // For other services, show coming soon alert
                 alert(`${service.title} is coming soon!`);
@@ -119,7 +113,7 @@ export default function ServicesScreen() {
           >
             <View style={styles.serviceHeader}>
               <Text style={styles.serviceTitle}>{service.title}</Text>
-              {service.title !== "Food Delivery" && (
+              {service.title !== "Deliveries" && (
                 <View style={styles.comingSoonBadge}>
                   <Clock size={10} color={Colors.primary} />
                   <Text style={styles.comingSoonText}>COMING SOON</Text>
@@ -130,10 +124,10 @@ export default function ServicesScreen() {
             <Text
               style={[
                 styles.serviceTag,
-                service.title === "Food Delivery" && { color: Colors.primary },
+                service.title === "Deliveries" && { color: Colors.primary },
               ]}
             >
-              {service.title === "Food Delivery" ? "AVAILABLE" : service.tag}
+              {service.title === "Deliveries" ? "AVAILABLE" : service.tag}
             </Text>
           </TouchableOpacity>
         ))}

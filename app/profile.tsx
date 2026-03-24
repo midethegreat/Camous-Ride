@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -52,8 +52,40 @@ type TwoFAStep = "idle" | "selectMethod" | "enterCode";
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
+
+  // Get source parameter to determine navigation behavior
+  const source = params.source as string | undefined;
+
+  // Custom back handler that goes to home if coming from deliveries
+  const handleBackNavigation = () => {
+    if (source === "deliveries") {
+      // Replace current route with home to prevent going back to deliveries
+      router.replace("/" as never);
+    } else {
+      // Normal back navigation
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace("/" as never);
+      }
+    }
+  };
   const { user, deleteAccount, logout, updateUser, toggle2FA } = useAuth();
+
+  // Handle back button press and swipe gestures
+  useEffect(() => {
+    // This will be called when the user presses back button or swipes back
+    const unsubscribe = router.addListener("beforeRemove", (e) => {
+      // Prevent default back behavior
+      e.preventDefault();
+      // Navigate to home instead
+      router.replace("/" as never);
+    });
+
+    return unsubscribe;
+  }, [router]);
   const [drawerOpen, setDrawerOpen] = useState<boolean>(false);
   const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [selectedReason, setSelectedReason] = useState<string>("");
@@ -348,6 +380,8 @@ export default function ProfileScreen() {
         title="Profile"
         subtitle="PORTAL ACCOUNT MANAGEMENT"
         onMenuPress={() => setDrawerOpen(true)}
+        showBackButton={!!source || router.canGoBack()}
+        onBackPress={handleBackNavigation}
       />
 
       <ScrollView

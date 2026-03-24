@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,14 +11,15 @@ import {
   Alert,
 } from "react-native";
 import {
-  ArrowLeft,
   Bell,
   Truck,
   MapPin,
   ChevronRight,
   Navigation,
   X,
+  MessageCircle,
 } from "lucide-react-native";
+import * as Location from "expo-location";
 import { useRouter } from "expo-router";
 import { Colors } from "@/constants/color";
 import { mockRideRequests } from "@/constants/mockData";
@@ -35,9 +36,48 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from "react-native-reanimated";
+import {
+  riderApiService,
+  formatWhatsAppOrderMessage,
+  WhatsAppOrder,
+  WhatsAppResponse,
+} from "@/services/riderApi";
 
 const { width } = Dimensions.get("window");
 const SWIPE_THRESHOLD = width * 0.3;
+
+// Utility function for reverse geocoding
+const getLocationName = async (
+  latitude: number,
+  longitude: number,
+): Promise<string> => {
+  try {
+    const [address] = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude,
+    });
+
+    if (address) {
+      // Build a readable address from available components
+      const parts = [];
+      if (address.name && address.name !== address.street)
+        parts.push(address.name);
+      if (address.street) parts.push(address.street);
+      if (address.city) parts.push(address.city);
+      if (address.district) parts.push(address.district);
+      if (address.region) parts.push(address.region);
+
+      return parts.length > 0
+        ? parts.join(", ")
+        : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+    }
+
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  } catch (error) {
+    console.error("Reverse geocoding error:", error);
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  }
+};
 
 interface SwipeableCardProps {
   request: any;
@@ -45,6 +85,7 @@ interface SwipeableCardProps {
   onAccept: (id: string) => void;
   onReject: (id: string) => void;
   onClose: (id: string) => void;
+  currentLocation?: Location.LocationObject | null;
 }
 
 const SwipeableCard = ({
@@ -53,8 +94,56 @@ const SwipeableCard = ({
   onAccept,
   onReject,
   onClose,
+  currentLocation,
 }: SwipeableCardProps) => {
   const translateX = useSharedValue(0);
+
+  const [pickupLocationName, setPickupLocationName] = useState(
+    request.pickupLocation,
+  );
+  const [dropoffLocationName, setDropoffLocationName] = useState(
+    request.dropoffLocation,
+  );
+  const [isLoadingLocation, setIsLoadingLocation] = useState(false);
+
+  // Resolve location names from coordinates if available
+  useEffect(() => {
+    const resolveLocationNames = async () => {
+      // Check if locations are coordinates (lat, lng format)
+      const pickupCoords = request.pickupLocation.match(
+        /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/,
+      );
+      const dropoffCoords = request.dropoffLocation.match(
+        /^(-?\d+\.?\d*),\s*(-?\d+\.?\d*)$/,
+      );
+
+      if (pickupCoords || dropoffCoords) {
+        setIsLoadingLocation(true);
+
+        try {
+          if (pickupCoords) {
+            const lat = parseFloat(pickupCoords[1]);
+            const lng = parseFloat(pickupCoords[2]);
+            const name = await getLocationName(lat, lng);
+            setPickupLocationName(name);
+          }
+
+          if (dropoffCoords) {
+            const lat = parseFloat(dropoffCoords[1]);
+            const lng = parseFloat(dropoffCoords[2]);
+            const name = await getLocationName(lat, lng);
+            setDropoffLocationName(name);
+          }
+        } catch (error) {
+          console.error("Error resolving location names:", error);
+        } finally {
+          setIsLoadingLocation(false);
+        }
+      }
+    };
+
+    resolveLocationNames();
+  }, [request.pickupLocation, request.dropoffLocation]);
 
   const animatedStyle = useAnimatedStyle(() => {
     return {
@@ -154,7 +243,7 @@ const SwipeableCard = ({
                 <Text
                   style={[styles.requestId, index === 0 && styles.whiteText]}
                 >
-                  {request.id.replace("request_", "HTO")}
+                  {request.passengerName}
                 </Text>
                 <Text
                   style={[styles.fareText, index === 0 && styles.lightText]}
@@ -184,11 +273,16 @@ const SwipeableCard = ({
           <View style={styles.locationContainer}>
             <View style={styles.locationInfo}>
               <Text
-                numberOfLines={1}
+                numberOfLines={2}
+                style={[styles.locationLabel, index === 0 && styles.whiteText]}
+              >
+                Pickup
+              </Text>
+              <Text
+                numberOfLines={2}
                 style={[styles.locationName, index === 0 && styles.whiteText]}
               >
-                {request.pickupLocation.split(",")[1]?.trim() ||
-                  request.pickupLocation}
+                {pickupLocationName}
               </Text>
             </View>
 
@@ -201,21 +295,30 @@ const SwipeableCard = ({
               <Text
                 style={[styles.distanceText, index === 0 && styles.whiteText]}
               >
-                {request.distance}km
+                {liveDistance}km
               </Text>
             </View>
 
             <View style={styles.locationInfo}>
               <Text
-                numberOfLines={1}
+                numberOfLines={2}
+                style={[
+                  styles.locationLabel,
+                  index === 0 && styles.whiteText,
+                  { textAlign: "right" },
+                ]}
+              >
+                Dropoff
+              </Text>
+              <Text
+                numberOfLines={2}
                 style={[
                   styles.locationName,
                   index === 0 && styles.whiteText,
                   { textAlign: "right" },
                 ]}
               >
-                {request.dropoffLocation.split(",")[1]?.trim() ||
-                  request.dropoffLocation}
+                {dropoffLocationName}
               </Text>
             </View>
           </View>
@@ -258,9 +361,63 @@ const SwipeableCard = ({
 export default function RideRequestsScreen() {
   const router = useRouter();
   const [requests, setRequests] = useState(mockRideRequests);
+  const [isGPSEnabled, setIsGPSEnabled] = useState(false);
+  const [currentLocation, setCurrentLocation] =
+    useState<Location.LocationObject | null>(null);
+  const [pendingWhatsAppOrders, setPendingWhatsAppOrders] = useState<
+    Map<string, WhatsAppResponse>
+  >(new Map());
+  const [isProcessingOrder, setIsProcessingOrder] = useState(false);
 
-  const handleAccept = (requestId: string) => {
+  const handleAccept = async (requestId: string) => {
     console.log("Accepted request:", requestId);
+
+    // For food delivery requests, send WhatsApp notification to restaurant
+    const request = requests.find((r) => r.id === requestId);
+    if (request && request.type === "food_delivery") {
+      try {
+        // Create WhatsApp order notification
+        const whatsappOrder: WhatsAppOrder = {
+          orderId: requestId,
+          restaurantPhone: "+234XXXXXXXXXX", // This should come from restaurant profile
+          customerName: request.passengerName,
+          customerPhone: request.passengerPhone,
+          items: [
+            {
+              name: "Food Delivery Order",
+              quantity: 1,
+              price: request.fare,
+              specialInstructions: request.specialInstructions || "",
+            },
+          ],
+          totalAmount: request.fare,
+          deliveryAddress: request.dropoffLocation,
+          pickupLocation: request.pickupLocation,
+          timestamp: new Date().toISOString(),
+        };
+
+        // Send order to restaurant via WhatsApp
+        const response =
+          await riderApiService.sendOrderToRestaurant(whatsappOrder);
+
+        Alert.alert(
+          "Restaurant Notified!",
+          "Order has been sent to the restaurant via WhatsApp.",
+          [{ text: "OK" }],
+        );
+
+        // Start checking for restaurant response
+        setTimeout(() => checkRestaurantResponse(requestId), 5000);
+      } catch (error) {
+        console.error("Failed to notify restaurant via WhatsApp:", error);
+        Alert.alert(
+          "Notification Failed",
+          "Failed to notify restaurant via WhatsApp, but you can still proceed with the delivery.",
+          [{ text: "OK" }],
+        );
+      }
+    }
+
     setRequests((prev) => prev.filter((r) => r.id !== requestId));
     // Navigate to active trip page
     router.push("/active-trip");
@@ -282,27 +439,82 @@ export default function RideRequestsScreen() {
     setRequests((prev) => prev.filter((r) => r.id !== requestId));
   };
 
+  const checkRestaurantResponse = async (orderId: string) => {
+    try {
+      const response = await riderApiService.checkRestaurantResponse(orderId);
+
+      if (response && response.restaurantResponse) {
+        if (response.restaurantResponse === "1") {
+          Alert.alert(
+            "Order Accepted! 🎉",
+            "The restaurant has accepted your order.",
+            [{ text: "OK" }],
+          );
+        } else if (response.restaurantResponse === "2") {
+          Alert.alert(
+            "Order Declined",
+            "The restaurant has declined your order. Please contact support.",
+            [{ text: "OK" }],
+          );
+        }
+      } else {
+        // Check again in 5 seconds if no response yet
+        setTimeout(() => checkRestaurantResponse(orderId), 5000);
+      }
+    } catch (error) {
+      console.error("Error checking restaurant response:", error);
+      // Check again in 5 seconds on error
+      setTimeout(() => checkRestaurantResponse(orderId), 5000);
+    }
+  };
+
+  // GPS Location tracking
+  useEffect(() => {
+    let locationWatcher: Location.LocationSubscription | null = null;
+
+    const startLocationTracking = async () => {
+      try {
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          console.warn("Permission to access location was denied");
+          return;
+        }
+
+        // Get initial location
+        const currentLocation = await Location.getCurrentPositionAsync({});
+        setCurrentLocation(currentLocation);
+        setIsGPSEnabled(true);
+
+        // Watch for location changes
+        locationWatcher = await Location.watchPositionAsync(
+          {
+            accuracy: Location.Accuracy.High,
+            distanceInterval: 50, // Update every 50 meters
+            timeInterval: 10000, // Update every 10 seconds
+          },
+          (newLocation) => {
+            setCurrentLocation(newLocation);
+          },
+        );
+      } catch (error) {
+        console.error("Error starting location tracking:", error);
+        setIsGPSEnabled(false);
+      }
+    };
+
+    startLocationTracking();
+
+    return () => {
+      if (locationWatcher) {
+        locationWatcher.remove();
+      }
+    };
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <StatusBar barStyle="dark-content" />
-
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity
-            style={styles.headerButton}
-            onPress={() => router.back()}
-          >
-            <ArrowLeft size={24} color={Colors.text} />
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>New Trip Requests</Text>
-          <TouchableOpacity style={styles.headerButton}>
-            <View style={styles.badgeContainer}>
-              <Text style={styles.badgeText}>{requests.length}</Text>
-            </View>
-            <Bell size={24} color={Colors.text} />
-          </TouchableOpacity>
-        </View>
 
         <ScrollView
           style={styles.scrollView}
@@ -310,7 +522,20 @@ export default function RideRequestsScreen() {
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>New Trip Requests</Text>
+            <View style={styles.sectionTitleContainer}>
+              <Text style={styles.sectionTitle}>New Trip Requests</Text>
+              <View
+                style={[
+                  styles.gpsIndicator,
+                  isGPSEnabled && styles.gpsIndicatorActive,
+                ]}
+              >
+                <Navigation
+                  size={12}
+                  color={isGPSEnabled ? Colors.white : Colors.textMuted}
+                />
+              </View>
+            </View>
             <TouchableOpacity>
               <Text style={styles.seeAllText}>See All</Text>
             </TouchableOpacity>
@@ -335,10 +560,63 @@ export default function RideRequestsScreen() {
             </View>
           )}
         </ScrollView>
-      </SafeAreaView>
+      </View>
     </GestureHandlerRootView>
   );
 }
+
+// Utility function for reverse geocoding
+const getLocationName = async (
+  latitude: number,
+  longitude: number,
+): Promise<string> => {
+  try {
+    const [address] = await Location.reverseGeocodeAsync({
+      latitude,
+      longitude,
+    });
+
+    if (address) {
+      // Build a readable address from available components
+      const parts = [];
+      if (address.name && address.name !== address.street)
+        parts.push(address.name);
+      if (address.street) parts.push(address.street);
+      if (address.city) parts.push(address.city);
+      if (address.district) parts.push(address.district);
+      if (address.region) parts.push(address.region);
+
+      return parts.length > 0
+        ? parts.join(", ")
+        : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+    }
+
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  } catch (error) {
+    console.error("Reverse geocoding error:", error);
+    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+  }
+};
+
+// Utility function to calculate distance between two coordinates (Haversine formula)
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number,
+): number => {
+  const R = 6371; // Earth's radius in kilometers
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -393,32 +671,50 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingHorizontal: 12,
+    paddingBottom: 20,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginTop: 20,
-    marginBottom: 16,
+    marginTop: 15,
+    marginBottom: 12,
+  },
+  sectionTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   sectionTitle: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "700",
     color: Colors.text,
   },
+  gpsIndicator: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: Colors.textMuted,
+    justifyContent: "center",
+    alignItems: "center",
+    opacity: 0.6,
+  },
+  gpsIndicatorActive: {
+    backgroundColor: Colors.success,
+    opacity: 1,
+  },
   seeAllText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textMuted,
     fontWeight: "500",
   },
   closeButton: {
     position: "absolute",
-    top: 15,
-    right: 15,
+    top: 12,
+    right: 12,
     zIndex: 10,
-    padding: 5,
+    padding: 4,
   },
   handleReject: {
     backgroundColor: Colors.error,
@@ -427,29 +723,29 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.success,
   },
   cardWrapper: {
-    marginBottom: 16,
+    marginBottom: 12,
     position: "relative",
   },
   cardBackground: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 24,
+    borderRadius: 20,
     justifyContent: "center",
   },
   bgIcons: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingHorizontal: 30,
+    paddingHorizontal: 25,
   },
   bgText: {
     color: "white",
     fontWeight: "700",
-    fontSize: 16,
+    fontSize: 14,
   },
   requestCard: {
     backgroundColor: "#2C2C2E", // Dark card for regular requests
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -463,32 +759,47 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: 20,
+    marginBottom: 15,
   },
   cardHeaderLeft: {
     flexDirection: "row",
     alignItems: "center",
   },
   iconContainer: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     backgroundColor: Colors.background,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 12,
+    marginRight: 10,
   },
   iconContainerFirst: {
     backgroundColor: "rgba(0,0,0,0.8)",
   },
   requestId: {
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: "700",
     color: Colors.white,
     marginBottom: 2,
   },
   fareText: {
-    fontSize: 14,
+    fontSize: 13,
+    color: Colors.textMuted,
+  },
+  passengerInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginTop: 2,
+  },
+  ratingText: {
+    fontSize: 12,
+    color: Colors.warning,
+    fontWeight: "600",
+  },
+  seatsText: {
+    fontSize: 12,
     color: Colors.textMuted,
   },
   lightText: {
@@ -498,60 +809,86 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: Colors.white,
   },
+  whatsappStatus: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+  },
+  whatsappText: {
+    fontSize: 10,
+    color: "#25D366",
+    marginLeft: 4,
+    fontWeight: "500",
+  },
   whiteText: {
     color: Colors.white,
   },
   trackingButton: {
     backgroundColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   trackingButtonFirst: {
     backgroundColor: "rgba(0,0,0,0.2)",
   },
   trackingText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     color: Colors.textMuted,
   },
   locationContainer: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: 20,
   },
   locationInfo: {
     flex: 1,
+    paddingHorizontal: 5,
+  },
+  locationLabel: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: Colors.textMuted,
+    marginBottom: 4,
+    textTransform: "uppercase",
   },
   locationName: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: "500",
     color: Colors.white,
+    lineHeight: 18,
   },
   distanceBadge: {
     backgroundColor: "rgba(255,255,255,0.1)",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginHorizontal: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginHorizontal: 10,
   },
   distanceBadgeFirst: {
     backgroundColor: "rgba(0,0,0,0.8)",
   },
   distanceText: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
     color: Colors.white,
   },
+  liveDistanceText: {
+    fontSize: 9,
+    fontWeight: "600",
+    color: Colors.success,
+    marginTop: 2,
+  },
   actionContainer: {
     flexDirection: "row",
-    gap: 12,
+    gap: 10,
   },
   rejectButton: {
     flex: 1,
-    height: 54,
-    borderRadius: 27,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: "rgba(255,255,255,0.1)",
     justifyContent: "center",
     alignItems: "center",
@@ -560,14 +897,14 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.2)",
   },
   rejectText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: Colors.white,
   },
   acceptButton: {
     flex: 1.5,
-    height: 54,
-    borderRadius: 27,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: Colors.primary,
     justifyContent: "center",
     alignItems: "center",
@@ -576,7 +913,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.black,
   },
   acceptText: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "700",
     color: Colors.white,
   },

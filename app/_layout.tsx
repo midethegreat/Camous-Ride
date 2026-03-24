@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "@/providers/AuthProvider";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { NotificationProvider } from "@/providers/NotificationProvider";
+import { CartProvider } from "@/providers/CartProvider";
 import { API_URL } from "@/constants/apiConfig";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -110,6 +111,9 @@ function RootLayoutNav() {
       <Stack.Screen name="pin-settings" options={{ presentation: "card" }} />
       <Stack.Screen name="receipt" options={{ presentation: "modal" }} />
       <Stack.Screen name="notifications" options={{ presentation: "card" }} />
+      <Stack.Screen name="checkout" options={{ presentation: "card" }} />
+      <Stack.Screen name="rider-assignment" options={{ presentation: "card" }} />
+      <Stack.Screen name="live-tracking" options={{ presentation: "card" }} />
       <Stack.Screen name="+not-found" />
     </Stack>
   );
@@ -121,9 +125,11 @@ export default function RootLayout() {
       <GestureHandlerRootView style={{ flex: 1 }}>
         <AuthProvider>
           <NotificationProvider api_url={API_URL}>
-            <ErrorBoundary>
-              <RootLayoutNav />
-            </ErrorBoundary>
+            <CartProvider>
+              <ErrorBoundary>
+                <RootLayoutNav />
+              </ErrorBoundary>
+            </CartProvider>
           </NotificationProvider>
         </AuthProvider>
       </GestureHandlerRootView>

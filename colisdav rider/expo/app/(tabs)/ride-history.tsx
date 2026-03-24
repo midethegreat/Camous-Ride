@@ -26,7 +26,7 @@ interface Trip {
   rating?: number;
 }
 
-export default function ActivityScreen() {
+export default function RideHistoryScreen() {
   const { user } = useAuth();
   const [tripHistory, setTripHistory] = useState<Trip[]>(mockTripHistory);
   const [loading, setLoading] = useState(false);
@@ -92,7 +92,7 @@ export default function ActivityScreen() {
     return (
       <SafeAreaView style={[styles.container, styles.loadingContainer]}>
         <ActivityIndicator size="large" color={Colors.primary} />
-        <Text style={styles.loadingText}>Loading activity data...</Text>
+        <Text style={styles.loadingText}>Loading history data...</Text>
       </SafeAreaView>
     );
   }
@@ -109,13 +109,7 @@ export default function ActivityScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Text style={styles.headerTitle}>Activity</Text>
-        <Text style={styles.headerSubtitle}>YOUR RECENT TRIPS</Text>
-      </View>
-
+    <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Filter Tabs */}
         <View style={styles.filterContainer}>
@@ -211,7 +205,7 @@ export default function ActivityScreen() {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 

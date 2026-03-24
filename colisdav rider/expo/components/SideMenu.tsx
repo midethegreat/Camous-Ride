@@ -15,51 +15,47 @@ import {
   Home,
   User,
   Clock,
-  FileText,
-  HelpCircle,
   LogOut,
   ChevronRight,
   X,
-  BadgeCheck,
   Wallet,
   Navigation,
+  Package,
+  ShieldCheck,
+  Gift,
+  Settings,
+  LayoutGrid,
 } from "lucide-react-native";
 import { Colors } from "@/constants/color";
 import { useRouter } from "expo-router";
 import { Image } from "react-native";
-import { DriverProfile } from "@/services/riderApi";
 import { useAuth } from "@/contexts/AuthContext";
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 
 interface SideMenuProps {
   isVisible: boolean;
   onClose: () => void;
-  driverProfile?: DriverProfile | null;
+  driverProfile?: any;
 }
 
-const SideMenu: React.FC<SideMenuProps> = ({
-  isVisible,
-  onClose,
-  driverProfile,
-}) => {
+const SideMenu: React.FC<SideMenuProps> = ({ isVisible, onClose }) => {
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const slideAnim = useRef(new Animated.Value(-width)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (isVisible) {
-      // Slow expansion from the left
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,
-          duration: 500,
+          duration: 300,
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
           toValue: 1,
-          duration: 500,
+          duration: 300,
           useNativeDriver: true,
         }),
       ]).start();
@@ -67,12 +63,12 @@ const SideMenu: React.FC<SideMenuProps> = ({
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: -width,
-          duration: 400,
+          duration: 250,
           useNativeDriver: true,
         }),
         Animated.timing(opacityAnim, {
           toValue: 0,
-          duration: 400,
+          duration: 250,
           useNativeDriver: true,
         }),
       ]).start();
@@ -81,10 +77,20 @@ const SideMenu: React.FC<SideMenuProps> = ({
 
   const menuItems = [
     { icon: Home, label: "Home", route: "/(tabs)" },
-    { icon: Wallet, label: "Wallet (Earnings)", route: "/(tabs)/earnings" },
-    { icon: Navigation, label: "Ride requests", route: "/ride-requests" },
-    { icon: Clock, label: "Ride History", route: "/(tabs)/activity" },
+    { icon: Wallet, label: "Wallet", route: "/(tabs)/earnings" },
+    {
+      icon: LayoutGrid,
+      label: "Delivery requests",
+      route: "/(tabs)/delivery-requests",
+    },
+    {
+      icon: Navigation,
+      label: "Ride requests",
+      route: "/(tabs)/ride-requests",
+    },
+    { icon: Clock, label: "Ride History", route: "/(tabs)/ride-history" },
     { icon: User, label: "Profile", route: "/(tabs)/profile" },
+    { icon: Gift, label: "Subscription", route: "/subscription" },
   ];
 
   const handleNavigation = (route: string) => {
@@ -100,12 +106,10 @@ const SideMenu: React.FC<SideMenuProps> = ({
       animationType="none"
     >
       <View style={styles.container}>
-        {/* Backdrop */}
         <TouchableWithoutFeedback onPress={onClose}>
           <Animated.View style={[styles.backdrop, { opacity: opacityAnim }]} />
         </TouchableWithoutFeedback>
 
-        {/* Menu Content */}
         <Animated.View
           style={[
             styles.menuContent,
@@ -114,37 +118,46 @@ const SideMenu: React.FC<SideMenuProps> = ({
         >
           <SafeAreaView style={styles.safeArea}>
             <View style={styles.header}>
-              <View style={styles.profileFrame}>
-                <Image
-                  source={{
-                    uri:
-                      driverProfile?.avatar ||
-                      "https://via.placeholder.com/100",
-                  }}
-                  style={styles.profileAvatar}
-                />
-                <View style={styles.profileInfo}>
-                  <Text style={styles.profileName} numberOfLines={1}>
-                    {driverProfile?.name || "Driver"}
+              <View style={styles.brandSection}>
+                <ShieldCheck size={20} color="#1B7A43" />
+                <Text style={styles.brandText}>CID</Text>
+              </View>
+              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                <X size={24} color="#666" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.brandTitleSection}>
+              <Text style={styles.brandTitle}>KEKE FUNAAB</Text>
+            </View>
+
+            <View style={styles.profileCardContainer}>
+              <View style={styles.profileCard}>
+                <View style={styles.avatarContainer}>
+                  <Text style={styles.avatarInitial}>
+                    {(user?.fullName || "R").charAt(0).toUpperCase()}
                   </Text>
-                  <View style={styles.verifyBadge}>
-                    <BadgeCheck
-                      size={14}
-                      color={Colors.primary}
-                      fill={Colors.primary + "20"}
-                    />
-                    <Text style={styles.verifyText}>Verified Driver</Text>
+                </View>
+                <View style={styles.profileInfo}>
+                  <Text style={styles.profileEmail} numberOfLines={1}>
+                    {user?.email || "rider@example.com"}
+                  </Text>
+                  <View style={styles.roleContainer}>
+                    <Text style={styles.profileRole}>RIDER</Text>
+                    {user?.subscription?.type === "premium" && (
+                      <View style={styles.premiumBadge}>
+                        <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+                      </View>
+                    )}
                   </View>
                 </View>
               </View>
-              <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <X size={20} color={Colors.textSecondary} />
-              </TouchableOpacity>
             </View>
 
             <ScrollView
               showsVerticalScrollIndicator={false}
               style={styles.scroll}
+              contentContainerStyle={styles.scrollContent}
             >
               {menuItems.map((item, index) => (
                 <TouchableOpacity
@@ -153,12 +166,10 @@ const SideMenu: React.FC<SideMenuProps> = ({
                   onPress={() => handleNavigation(item.route)}
                 >
                   <View style={styles.menuItemLeft}>
-                    <View style={styles.iconContainer}>
-                      <item.icon size={22} color={Colors.primary} />
-                    </View>
+                    <item.icon size={22} color="#444" />
                     <Text style={styles.menuLabel}>{item.label}</Text>
                   </View>
-                  <ChevronRight size={20} color={Colors.textMuted} />
+                  <ChevronRight size={18} color="#CCC" />
                 </TouchableOpacity>
               ))}
             </ScrollView>
@@ -171,8 +182,8 @@ const SideMenu: React.FC<SideMenuProps> = ({
                   logout();
                 }}
               >
-                <LogOut size={20} color={Colors.error} />
-                <Text style={styles.signOutText}>Sign Out</Text>
+                <LogOut size={20} color="#D32F2F" />
+                <Text style={styles.signOutText}>SIGN OUT</Text>
               </TouchableOpacity>
             </View>
           </SafeAreaView>
@@ -188,17 +199,12 @@ const styles = StyleSheet.create({
   },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
   },
   menuContent: {
-    width: width * 0.8,
+    width: width * 0.75,
     height: "100%",
     backgroundColor: Colors.white,
-    shadowColor: Colors.black,
-    shadowOffset: { width: 4, height: 0 },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 20,
   },
   safeArea: {
     flex: 1,
@@ -207,98 +213,128 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingVertical: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
-    backgroundColor: Colors.white,
+    paddingHorizontal: 20,
+    paddingTop: 20,
   },
-  profileFrame: {
+  brandSection: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    flex: 1,
+    gap: 8,
   },
-  profileAvatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: Colors.borderLight,
-  },
-  profileInfo: {
-    flex: 1,
-    gap: 2,
-  },
-  profileName: {
-    fontSize: 16,
+  brandText: {
+    fontSize: 12,
     fontWeight: "700",
-    color: Colors.text,
-  },
-  verifyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  verifyText: {
-    fontSize: 11,
-    color: Colors.textSecondary,
-    fontWeight: "500",
+    color: "#1B7A43",
+    letterSpacing: 0.5,
   },
   closeButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.background,
+    padding: 4,
+  },
+  brandTitleSection: {
+    paddingHorizontal: 20,
+    marginTop: 8,
+    marginBottom: 16,
+  },
+  brandTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#111",
+  },
+  profileCardContainer: {
+    paddingHorizontal: 16,
+    marginBottom: 16,
+  },
+  profileCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#F8F9FA",
+    borderRadius: 12,
+    padding: 10,
+    gap: 12,
+  },
+  avatarContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#E8F5E9",
     justifyContent: "center",
     alignItems: "center",
   },
+  avatarInitial: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#2E7D32",
+  },
+  profileInfo: {
+    flex: 1,
+    gap: 1,
+  },
+  profileEmail: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#111",
+  },
+  profileRole: {
+    fontSize: 10,
+    color: "#2E7D32",
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  roleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    marginTop: 2,
+  },
+  premiumBadge: {
+    backgroundColor: Colors.warning,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  premiumBadgeText: {
+    color: "white",
+    fontSize: 8,
+    fontWeight: "800",
+  },
   scroll: {
     flex: 1,
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   menuItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     paddingHorizontal: 20,
-    paddingVertical: 14, // Reduced from 18
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderLight,
+    paddingVertical: 14,
   },
   menuItemLeft: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12, // Reduced from 16
-  },
-  iconContainer: {
-    width: 32, // Reduced from 40
-    height: 32, // Reduced from 40
-    borderRadius: 8,
-    backgroundColor: Colors.primary + "10",
-    justifyContent: "center",
-    alignItems: "center",
+    gap: 12,
   },
   menuLabel: {
-    fontSize: 13, // Reduced from 14
-    color: Colors.text,
-    fontWeight: "600",
+    fontSize: 14,
+    color: "#111",
+    fontWeight: "500",
   },
   footer: {
-    borderTopWidth: 1,
-    borderTopColor: Colors.borderLight,
-    paddingVertical: 20,
-    backgroundColor: Colors.background,
+    paddingBottom: 30,
+    paddingHorizontal: 20,
   },
   signOutButton: {
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 20,
     paddingVertical: 12,
   },
   signOutText: {
-    fontSize: 16,
-    color: Colors.error,
-    fontWeight: "600",
+    fontSize: 13,
+    color: "#D32F2F",
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
 });
 

@@ -15,6 +15,13 @@ export interface User {
   memberSince: string;
   status: string; // 'pending', 'verified', 'suspended'
   kycStatus: "pending" | "submitted" | "verified" | "rejected";
+  subscription?: {
+    type: "free" | "premium";
+    planId?: "weekly" | "monthly";
+    expiryDate?: string;
+    commissionRate: number;
+    priority: number;
+  };
   vehicle?: {
     type: string;
     plateNumber: string;
@@ -72,6 +79,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       memberSince: "Jan 2024",
       status: "verified",
       kycStatus: "verified",
+      subscription: {
+        type: "free",
+        commissionRate: 0.1,
+        priority: 1,
+      },
       vehicle: {
         type: "Tricycle (Keke)",
         plateNumber: "LA 909-BC",
@@ -140,6 +152,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           : "Jan 2024",
         status: data.user?.status || "verified",
         kycStatus: data.user?.kycStatus || "pending",
+        subscription: data.user?.subscription || {
+          type: "free",
+          commissionRate: 0.1,
+          priority: 1,
+        },
       };
 
       // Store in AsyncStorage for persistence
@@ -197,6 +214,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         }),
         status: "verified",
         kycStatus: "pending",
+        subscription: {
+          type: "free",
+          commissionRate: 0.1,
+          priority: 1,
+        },
       };
 
       // Store in AsyncStorage for persistence

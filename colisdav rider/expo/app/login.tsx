@@ -21,9 +21,11 @@ import {
   Mail,
   Lock,
   Phone,
+  CheckCircle2,
 } from "lucide-react-native";
 import { Colors } from "@/constants/color";
 import { useAuth } from "@/contexts/AuthContext";
+import { Modal } from "react-native";
 
 const { width } = Dimensions.get("window");
 
@@ -34,6 +36,7 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const handleLogin = async () => {
     if (!emailOrPhone || !password) {
@@ -46,8 +49,11 @@ export default function LoginScreen() {
       // Use auth context to login with email/phone and password (OTP removed for login)
       const loginSuccess = await login(emailOrPhone, password);
       if (loginSuccess) {
-        Alert.alert("Success", "Login successful!");
-        router.replace("/(tabs)");
+        setShowSuccessModal(true);
+        setTimeout(() => {
+          setShowSuccessModal(false);
+          router.replace("/(tabs)");
+        }, 2000);
       }
     } catch (error: any) {
       Alert.alert(
@@ -61,6 +67,20 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Modal visible={showSuccessModal} transparent={true} animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.successIconContainer}>
+              <CheckCircle2 size={60} color="white" />
+            </View>
+            <Text style={styles.successTitle}>Login Successful!</Text>
+            <Text style={styles.successSubtitle}>
+              Welcome back to Colisdav Rider.
+            </Text>
+          </View>
+        </View>
+      </Modal>
+
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -175,40 +195,40 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   scrollContent: {
-    paddingHorizontal: width * 0.08,
-    paddingBottom: 40,
+    paddingHorizontal: width * 0.06,
+    paddingBottom: 30,
     flexGrow: 1,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 60,
+    marginTop: 15,
+    marginBottom: 40,
   },
   backBtn: {
-    marginRight: 15,
+    marginRight: 12,
   },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   logoCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 10,
+    marginRight: 8,
   },
   logoText: {
     color: "white",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
   },
   headerTitle: {
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
   },
   content: {
@@ -216,25 +236,25 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "white",
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: "800",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
     color: "rgba(255,255,255,0.7)",
-    fontSize: 16,
-    marginBottom: 40,
-    lineHeight: 22,
+    fontSize: 14,
+    marginBottom: 30,
+    lineHeight: 20,
   },
   form: {
-    gap: 15,
+    gap: 12,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 16,
-    height: 60,
+    borderRadius: 14,
+    height: 56,
     paddingHorizontal: 16,
   },
   inputIcon: {
@@ -243,7 +263,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     color: "white",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
   },
   eyeBtn: {
@@ -255,17 +275,17 @@ const styles = StyleSheet.create({
   },
   forgotText: {
     color: "white",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     opacity: 0.8,
   },
   button: {
     backgroundColor: "white",
-    height: 60,
-    borderRadius: 16,
+    height: 56,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 40,
+    marginTop: 30,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -274,21 +294,57 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: Colors.primary,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
   },
   signupLinkContainer: {
     flexDirection: "row",
     justifyContent: "center",
-    marginTop: 30,
+    marginTop: 25,
   },
   signupText: {
     color: "rgba(255,255,255,0.7)",
-    fontSize: 15,
+    fontSize: 14,
   },
   signupLink: {
     color: "white",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "700",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    backgroundColor: Colors.primary,
+    borderRadius: 24,
+    padding: 30,
+    alignItems: "center",
+    width: width * 0.8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
+  },
+  successIconContainer: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  successTitle: {
+    color: "white",
+    fontSize: 20,
+    fontWeight: "800",
+    marginBottom: 6,
+    textAlign: "center",
+  },
+  successSubtitle: {
+    color: "rgba(255,255,255,0.7)",
+    fontSize: 14,
+    textAlign: "center",
   },
 });

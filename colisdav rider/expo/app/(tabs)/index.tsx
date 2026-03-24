@@ -33,6 +33,7 @@ import {
   Menu,
   ArrowUpRight,
   ChevronRight,
+  Crown,
 } from "lucide-react-native";
 import { Colors } from "@/constants/color";
 import { useAuth } from "@/contexts/AuthContext";
@@ -241,6 +242,10 @@ export default function DriverHomeScreen() {
 
   useEffect(() => {
     if (isOnline) {
+      // Set simulation frequency based on driver priority
+      const priority = user?.subscription?.priority || 1;
+      rideBookingService.setFrequencyMultiplier(priority);
+
       // Subscribe to live bookings when online
       const unsubscribe = rideBookingService.subscribe((newBooking) => {
         setRideRequests((prev) => {
@@ -551,9 +556,20 @@ export default function DriverHomeScreen() {
             />
 
             <View style={styles.cardInfo}>
-              <Text style={styles.driverName}>
-                {(user?.fullName || "Rider").split(" ")[0]}
-              </Text>
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+              >
+                <Text style={styles.driverEmail} numberOfLines={1}>
+                  {user?.email || "rider@example.com"}
+                </Text>
+                {user?.subscription?.type === "premium" && (
+                  <Crown
+                    size={12}
+                    color={Colors.warning}
+                    fill={Colors.warning}
+                  />
+                )}
+              </View>
               <Text style={styles.driverPhone}>
                 {user?.phone || "+234 000 000 0000"}
               </Text>
@@ -565,13 +581,6 @@ export default function DriverHomeScreen() {
                 { backgroundColor: isOnline ? Colors.success : "#E5E7EB" },
               ]}
             >
-              {isOnline && (
-                <CheckCircle2
-                  size={14}
-                  color="white"
-                  style={{ marginRight: 4 }}
-                />
-              )}
               <Text
                 style={[
                   styles.statusBadgeText,
@@ -701,8 +710,8 @@ const styles = StyleSheet.create({
   },
   floatingCard: {
     backgroundColor: "white",
-    borderRadius: 20,
-    padding: 12,
+    borderRadius: 12,
+    padding: 8,
     flexDirection: "row",
     alignItems: "center",
     shadowColor: "#000",
@@ -712,38 +721,38 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   menuTrigger: {
-    marginRight: 12,
+    marginRight: 8,
   },
   profilePicSmall: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderColor: "#FCA5A5", // Reddish border like in image
-    marginRight: 12, // Added margin
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: "#FCA5A5",
+    marginRight: 8,
   },
   cardInfo: {
     flex: 1,
   },
-  driverName: {
-    fontSize: 16,
+  driverEmail: {
+    fontSize: 13,
     fontWeight: "700",
     color: Colors.text,
   },
   driverPhone: {
-    fontSize: 12,
+    fontSize: 10,
     color: Colors.textMuted,
-    marginTop: 2,
+    marginTop: 1,
   },
   statusBadge: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 16,
   },
   statusBadgeText: {
-    fontSize: 14,
+    fontSize: 11,
     fontWeight: "600",
   },
   kycWarningBanner: {

@@ -12,6 +12,7 @@ interface HeaderProps {
   showBackButton?: boolean;
   onMenuPress?: () => void;
   onNotificationsPress?: () => void;
+  onBackPress?: () => void;
 }
 
 export default function Header({
@@ -20,6 +21,7 @@ export default function Header({
   showBackButton = false,
   onMenuPress,
   onNotificationsPress,
+  onBackPress,
 }: HeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
@@ -28,7 +30,9 @@ export default function Header({
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   const handleBackPress = () => {
-    if (router.canGoBack()) {
+    if (onBackPress) {
+      onBackPress();
+    } else if (router.canGoBack()) {
       router.back();
     }
   };

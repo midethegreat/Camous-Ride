@@ -37,7 +37,9 @@ export default function OnboardingScreen() {
   const [isVerifying, setIsVerifying] = useState(false);
   const [otp, setOtp] = useState("");
   const [formData, setFormData] = useState({
-    fullName: "",
+    firstName: "",
+    lastName: "",
+    otherName: "",
     email: "",
     phone: "",
     password: "",
@@ -91,8 +93,10 @@ export default function OnboardingScreen() {
 
     setIsLoading(true);
     try {
+      const fullName =
+        `${formData.firstName} ${formData.lastName} ${formData.otherName}`.trim();
       const success = await signup({
-        fullName: formData.fullName,
+        fullName: fullName,
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
@@ -111,10 +115,13 @@ export default function OnboardingScreen() {
 
   const nextStep = () => {
     if (step === 1) {
-      if (formData.fullName && formData.phone) {
+      if (formData.firstName && formData.lastName && formData.phone) {
         setStep(2);
       } else {
-        Alert.alert("Error", "Please fill in all fields");
+        Alert.alert(
+          "Error",
+          "Please fill in all required fields (First and Last Name)",
+        );
       }
     } else if (step === 2) {
       if (!showOtpField) {
@@ -206,11 +213,45 @@ export default function OnboardingScreen() {
                   />
                   <TextInput
                     style={styles.input}
-                    placeholder="Full Name"
+                    placeholder="First Name"
                     placeholderTextColor="rgba(255,255,255,0.6)"
-                    value={formData.fullName}
+                    value={formData.firstName}
                     onChangeText={(text) =>
-                      setFormData({ ...formData, fullName: text })
+                      setFormData({ ...formData, firstName: text })
+                    }
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <User
+                    color="rgba(255,255,255,0.6)"
+                    size={20}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Last Name"
+                    placeholderTextColor="rgba(255,255,255,0.6)"
+                    value={formData.lastName}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, lastName: text })
+                    }
+                  />
+                </View>
+
+                <View style={styles.inputContainer}>
+                  <User
+                    color="rgba(255,255,255,0.6)"
+                    size={20}
+                    style={styles.inputIcon}
+                  />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Other Name (Optional)"
+                    placeholderTextColor="rgba(255,255,255,0.6)"
+                    value={formData.otherName}
+                    onChangeText={(text) =>
+                      setFormData({ ...formData, otherName: text })
                     }
                   />
                 </View>
@@ -357,52 +398,52 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.primary,
   },
   scrollContent: {
-    paddingHorizontal: width * 0.08,
-    paddingBottom: 40,
+    paddingHorizontal: width * 0.06,
+    paddingBottom: 30,
     flexGrow: 1,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 20,
-    marginBottom: 40,
+    marginTop: 15,
+    marginBottom: 30,
   },
   backBtn: {
-    marginRight: 15,
+    marginRight: 12,
   },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   logoCircle: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
-    marginRight: 10,
+    marginRight: 8,
   },
   logoText: {
     color: "white",
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: "bold",
   },
   headerTitle: {
     color: "white",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
   },
   progressContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 40,
+    marginBottom: 30,
   },
   progressStep: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
@@ -411,15 +452,15 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   progressStepText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "700",
     color: Colors.primary,
   },
   progressLine: {
-    width: 40,
+    width: 30,
     height: 2,
     backgroundColor: "rgba(255,255,255,0.2)",
-    marginHorizontal: 10,
+    marginHorizontal: 8,
   },
   activeProgressLine: {
     backgroundColor: "white",
@@ -429,25 +470,25 @@ const styles = StyleSheet.create({
   },
   title: {
     color: "white",
-    fontSize: 28,
+    fontSize: 24,
     fontWeight: "800",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   subtitle: {
     color: "rgba(255,255,255,0.7)",
-    fontSize: 16,
-    marginBottom: 30,
-    lineHeight: 22,
+    fontSize: 14,
+    marginBottom: 25,
+    lineHeight: 20,
   },
   form: {
-    gap: 15,
+    gap: 12,
   },
   inputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.15)",
-    borderRadius: 16,
-    height: 60,
+    borderRadius: 14,
+    height: 56,
     paddingHorizontal: 16,
   },
   otpContainer: {
@@ -461,16 +502,16 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     color: "white",
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
   },
   button: {
     backgroundColor: "white",
-    height: 60,
-    borderRadius: 16,
+    height: 56,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
-    marginTop: 40,
+    marginTop: 30,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
@@ -479,7 +520,7 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     color: Colors.primary,
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "700",
   },
 });

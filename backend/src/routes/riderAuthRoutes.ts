@@ -4,6 +4,7 @@ import { RiderAuthController } from "../controllers/riderAuthController";
 const router = Router();
 
 router.post("/send-otp", RiderAuthController.sendOtp);
+router.post("/send-sms-otp", RiderAuthController.sendSmsOtp);
 router.post("/verify-otp", RiderAuthController.verifyOtp);
 router.post("/register", RiderAuthController.register);
 router.post("/login", RiderAuthController.login);

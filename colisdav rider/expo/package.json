@@ -3,12 +3,13 @@
   "main": "expo-router/entry",
   "version": "1.0.0",
   "scripts": {
-    "start": "expo start",
-    "start-web": "expo start --web",
-    "start-web-dev": "DEBUG=expo* expo start --web",
+    "start": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first expo start",
+    "start-web": "cross-env NODE_OPTIONS=--dns-result-order=ipv4first expo start --web",
+    "start-web-dev": "cross-env DEBUG=expo* NODE_OPTIONS=--dns-result-order=ipv4first expo start --web",
     "lint": "expo lint"
   },
   "dependencies": {
+    "@react-native-async-storage/async-storage": "^2.2.0",
     "@tanstack/react-query": "^5.91.3",
     "expo": "~54.0.27",
     "expo-constants": "~18.0.13",
@@ -31,7 +32,8 @@
     "react-native-worklets": "0.5.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "cross-env": "^10.1.0"
   },
   "private": true
 }

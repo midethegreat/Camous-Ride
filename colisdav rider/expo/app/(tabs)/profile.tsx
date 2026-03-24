@@ -25,6 +25,7 @@ import {
   AlertCircle,
   Camera,
   Edit3,
+  Gift,
 } from "lucide-react-native";
 import { Colors } from "@/constants/color";
 import { useRouter } from "expo-router";
@@ -77,10 +78,20 @@ export default function ProfileScreen() {
       route: "/driver/vehicle-info",
     },
     {
+      icon: Gift,
+      title: "Subscription Plan",
+      subtitle:
+        user?.subscription?.type === "premium"
+          ? `${user.subscription.planId?.toUpperCase()} Plan Active`
+          : "Upgrade to Premium",
+      color: Colors.warning,
+      route: "/subscription",
+    },
+    {
       icon: FileText,
       title: "Documents",
       subtitle: "License, registration & permits",
-      color: Colors.warning,
+      color: "#9C27B0",
       route: "/documents",
     },
     {
@@ -244,14 +255,8 @@ export default function ProfileScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={["top"]}>
+    <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <Text style={styles.headerSubtitle}>DRIVER ACCOUNT</Text>
-        </View>
-
         {/* Profile Card with Picture Upload */}
         <View style={styles.profileCard}>
           <View style={styles.avatarContainer}>
@@ -432,7 +437,7 @@ export default function ProfileScreen() {
 
         <View style={styles.bottomPadding} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -461,10 +466,10 @@ const styles = StyleSheet.create({
   profileCard: {
     flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 20,
+    marginHorizontal: 15,
     backgroundColor: Colors.backgroundCard,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     shadowColor: Colors.black,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
@@ -478,18 +483,18 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   avatar: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
   },
   cameraOverlay: {
     position: "absolute",
     bottom: 0,
     right: 0,
     backgroundColor: Colors.primary,
-    borderRadius: 15,
-    width: 30,
-    height: 30,
+    borderRadius: 12,
+    width: 24,
+    height: 24,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
@@ -500,55 +505,55 @@ const styles = StyleSheet.create({
     bottom: 0,
     right: 0,
     backgroundColor: Colors.success,
-    borderRadius: 10,
-    width: 20,
-    height: 20,
+    borderRadius: 9,
+    width: 18,
+    height: 18,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 2,
     borderColor: Colors.white,
   },
   profileInfo: {
-    marginLeft: 16,
+    marginLeft: 12,
     flex: 1,
   },
   profileName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: Colors.text,
   },
   profileId: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.textMuted,
-    marginTop: 2,
+    marginTop: 1,
   },
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 6,
-    gap: 4,
+    marginTop: 4,
+    gap: 3,
   },
   ratingText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "600",
     color: Colors.text,
   },
   tripsText: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.textSecondary,
   },
   editButton: {
-    padding: 8,
+    padding: 6,
     backgroundColor: Colors.primary + "15",
     borderRadius: 8,
   },
   statsContainer: {
     flexDirection: "row",
-    marginHorizontal: 20,
-    marginTop: 16,
+    marginHorizontal: 15,
+    marginTop: 12,
     backgroundColor: Colors.backgroundCard,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
   },
   statItem: {
     flex: 1,
@@ -559,44 +564,44 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.borderLight,
   },
   statValue: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "700",
     color: Colors.text,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.textSecondary,
-    marginTop: 4,
+    marginTop: 2,
   },
   section: {
-    marginTop: 24,
-    paddingHorizontal: 20,
+    marginTop: 20,
+    paddingHorizontal: 15,
   },
   sectionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 10,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "600",
     color: Colors.text,
   },
   editText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.primary,
     fontWeight: "500",
   },
   viewAllText: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.primary,
     fontWeight: "500",
   },
   vehicleCard: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -605,59 +610,59 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   vehicleType: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: Colors.text,
   },
   vehicleDetails: {
-    fontSize: 14,
+    fontSize: 13,
     color: Colors.textSecondary,
     marginTop: 2,
   },
   vehicleModel: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.textMuted,
-    marginTop: 2,
+    marginTop: 1,
   },
   capacityBadge: {
     backgroundColor: Colors.primaryLight + "20",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   capacityText: {
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "600",
     color: Colors.primary,
   },
   docCard: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: 16,
-    padding: 16,
+    borderRadius: 14,
+    padding: 14,
   },
   docAlert: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 10,
   },
   docAlertText: {
     flex: 1,
   },
   docAlertTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: Colors.text,
   },
   docAlertSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.textSecondary,
-    marginTop: 2,
+    marginTop: 1,
   },
   docProgress: {
-    height: 6,
+    height: 5,
     backgroundColor: Colors.borderLight,
     borderRadius: 3,
-    marginTop: 12,
+    marginTop: 10,
     overflow: "hidden",
   },
   docProgressBar: {
@@ -666,20 +671,20 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   docProgressText: {
-    fontSize: 12,
+    fontSize: 11,
     color: Colors.textMuted,
-    marginTop: 8,
+    marginTop: 6,
     textAlign: "right",
   },
   menuContainer: {
     backgroundColor: Colors.backgroundCard,
-    borderRadius: 16,
+    borderRadius: 14,
     overflow: "hidden",
   },
   menuItem: {
     flexDirection: "row",
     alignItems: "center",
-    padding: 16,
+    padding: 14,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
   },
@@ -687,39 +692,39 @@ const styles = StyleSheet.create({
     borderBottomWidth: 0,
   },
   menuIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 36,
+    height: 36,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
   menuText: {
     flex: 1,
-    marginLeft: 12,
+    marginLeft: 10,
   },
   menuTitle: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "500",
     color: Colors.text,
   },
   menuSubtitle: {
-    fontSize: 13,
+    fontSize: 12,
     color: Colors.textSecondary,
-    marginTop: 2,
+    marginTop: 1,
   },
   signOutButton: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    marginHorizontal: 20,
-    marginTop: 24,
-    paddingVertical: 14,
+    marginHorizontal: 15,
+    marginTop: 20,
+    paddingVertical: 12,
     backgroundColor: Colors.errorLight,
-    borderRadius: 12,
+    borderRadius: 10,
     gap: 8,
   },
   signOutText: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "600",
     color: Colors.error,
   },

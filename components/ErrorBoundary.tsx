@@ -51,7 +51,7 @@ class ErrorBoundary extends Component<Props, State> {
             {process.env.NODE_ENV === "development" && (
               <Text style={styles.errorText}>{this.state.error?.message}</Text>
             )}
-            <TouchableOpacity style={styles.button} onPress={handleReset}>
+            <TouchableOpacity style={styles.button} onPress={this.handleReset}>
               <RefreshCw size={20} color={Colors.white} />
               <Text style={styles.buttonText}>Try Again</Text>
             </TouchableOpacity>
