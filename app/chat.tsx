@@ -32,6 +32,7 @@ import { ChatMessage, Driver } from "@/types";
 import { API_URL } from "@/constants/apiConfig";
 import Colors from "@/constants/Colors";
 import { useAuth } from "@/providers/AuthProvider";
+import AIService from "@/services/aiService";
 
 // Use shared theme colors across the app
 
@@ -42,13 +43,18 @@ export default function ChatScreen() {
   const params = useLocalSearchParams<{
     driverName?: string;
     driverId?: string;
+    type?: string;
   }>();
-  const driverName = params.driverName ?? "Ayomide Cole";
-  const driverId = params.driverId ?? "2";
+  const isAISupport = params.type === "ai-support";
+  const driverName = isAISupport
+    ? "Camous AI Support"
+    : (params.driverName ?? "Ayomide Cole");
+  const driverId = isAISupport ? "ai-support" : (params.driverId ?? "2");
 
   const [driver, setDriver] = useState<Driver | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState<string>("");
+  const [suggestions, setSuggestions] = useState<string[]>([]);
   const [showDriverProfile, setShowDriverProfile] = useState<boolean>(false);
   const profileSlide = useRef(new Animated.Value(0)).current;
   const scrollRef = useRef<ScrollView>(null);
@@ -59,6 +65,37 @@ export default function ChatScreen() {
 
   const fetchChat = async () => {
     if (!user) return;
+    if (isAISupport) {
+      // For AI Support, we might load from a different endpoint or just start fresh
+      setDriver({
+        id: "ai-support",
+        name: "Camous AI Support",
+        image: "https://cdn-icons-png.flaticon.com/512/4712/4712035.png", // AI icon
+        rating: 5.0,
+        trips: 10000,
+        vehicle: "AI Assistant",
+        tricycleType: "AI",
+        isOnline: true,
+        online: true,
+      } as any);
+
+      // Initialize with a welcome message if no messages exist
+      setMessages([
+        {
+          id: "welcome-ai",
+          text: "Hello! I'm Camous AI, your campus commute assistant. How can I help you today? I can help with bookings, route info, or redirect you to a human agent if needed.",
+          sender: "driver",
+          createdAt: new Date().toISOString(),
+        } as any,
+      ]);
+      setSuggestions([
+        "How to book a ride?",
+        "Fund my wallet",
+        "Track my delivery",
+        "Talk to an agent",
+      ]);
+      return;
+    }
     try {
       // 1) Fetch driver info
       const drRes = await fetch(`${API_URL}/api/users/drivers/available`);
@@ -100,32 +137,85 @@ export default function ChatScreen() {
     }).start(() => setShowDriverProfile(false));
   };
 
-  const sendMessage = async () => {
-    if (!inputText.trim() || !user) return;
+  const sendMessage = async (overrideText?: string) => {
+    const textToSend = overrideText || inputText;
+    if (!textToSend.trim() || !user) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    const newMsg: any = {
+    const userText = textToSend.trim();
+    const userMsg: any = {
+      id: Math.random().toString(36).substring(7),
       userId: user.id,
       driverId: driverId,
-      text: inputText.trim(),
+      text: userText,
       sender: "user",
+      createdAt: new Date().toISOString(),
     };
+
+    setMessages((prev) => [...prev, userMsg]);
+    if (!overrideText) setInputText("");
+    else setInputText(""); // Clear anyway if suggestion clicked
+
+    setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
+
+    if (isAISupport) {
+      // Simulate AI thinking and response using local AIService
+      setTimeout(async () => {
+        try {
+          const aiService = AIService.getInstance();
+          const aiResponse = await aiService.processRequest({
+            type: "support_chat",
+            data: { text: userText },
+            userId: user.id,
+          });
+
+          if (aiResponse.success) {
+            const aiMsg = {
+              id: Math.random().toString(36).substring(7),
+              text: aiResponse.data.response,
+              sender: "driver",
+              createdAt: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, aiMsg as any]);
+            setSuggestions(aiResponse.data.suggestions || []);
+          } else {
+            // Fallback if AI service fails
+            const fallbackMsg = {
+              id: Math.random().toString(36).substring(7),
+              text: "I'm currently processing your request. If this is urgent, would you like me to connect you with a live support agent?",
+              sender: "driver",
+              createdAt: new Date().toISOString(),
+            };
+            setMessages((prev) => [...prev, fallbackMsg as any]);
+            setSuggestions(["Talk to agent", "Report issue"]);
+          }
+        } catch (e) {
+          console.error("AI support error:", e);
+        }
+        setTimeout(
+          () => scrollRef.current?.scrollToEnd({ animated: true }),
+          100,
+        );
+      }, 1000);
+      return;
+    }
 
     try {
       const res = await fetch(`${API_URL}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newMsg),
+        body: JSON.stringify({
+          userId: user.id,
+          driverId: driverId,
+          text: userText,
+          sender: "user",
+        }),
       });
 
       if (res.ok) {
+        // The real backend might return a different ID or format
         const data = await res.json();
-        setMessages((prev) => [...prev, data]);
-        setInputText("");
-        setTimeout(
-          () => scrollRef.current?.scrollToEnd({ animated: true }),
-          100,
-        );
+        // Update the last message or just replace it if needed
       }
     } catch (e) {
       console.error("Failed to send message:", e);
@@ -151,8 +241,8 @@ export default function ChatScreen() {
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.driverHeaderInfo}
-          onPress={openProfile}
-          activeOpacity={0.7}
+          onPress={isAISupport ? undefined : openProfile}
+          activeOpacity={isAISupport ? 1 : 0.7}
         >
           <View style={styles.driverAvatar}>
             <Image
@@ -163,12 +253,17 @@ export default function ChatScreen() {
           </View>
           <View style={styles.headerInfo}>
             <Text style={styles.driverName}>{driverName}</Text>
-            <Text style={styles.onlineText}>ONLINE • TAP FOR PROFILE</Text>
+            <Text style={styles.onlineText}>
+              {isAISupport ? "ALWAYS ONLINE" : "ONLINE • TAP FOR PROFILE"}
+            </Text>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
-          <Phone size={20} color={Colors.primary} />
-        </TouchableOpacity>
+        {!isAISupport && (
+          <TouchableOpacity style={styles.callBtn} onPress={handleCall}>
+            <Phone size={20} color={Colors.primary} />
+          </TouchableOpacity>
+        )}
+        {isAISupport && <View style={{ width: 40 }} />}
       </View>
 
       <KeyboardAvoidingView
@@ -214,6 +309,28 @@ export default function ChatScreen() {
             </View>
           ))}
         </ScrollView>
+
+        {isAISupport && suggestions.length > 0 && (
+          <View style={styles.suggestionsContainer}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.suggestionsScroll}
+            >
+              {suggestions.map((suggestion, index) => (
+                <TouchableOpacity
+                  key={index}
+                  style={styles.suggestionBtn}
+                  onPress={() => {
+                    sendMessage(suggestion);
+                  }}
+                >
+                  <Text style={styles.suggestionText}>{suggestion}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
         <View style={[styles.inputBar, { paddingBottom: insets.bottom + 8 }]}>
           <TextInput
@@ -283,26 +400,26 @@ export default function ChatScreen() {
             <View style={styles.profileStats}>
               <View style={styles.statItem}>
                 <Star size={18} color={Colors.accent} />
-                <Text style={styles.statValue}>{driver.rating}</Text>
+                <Text style={styles.statValue}>{driver.rating || "5.0"}</Text>
                 <Text style={styles.statLabel}>Rating</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Car size={18} color={Colors.primary} />
-                <Text style={styles.statValue}>{driver.totalSeats}</Text>
+                <Text style={styles.statValue}>{driver.totalSeats || 0}</Text>
                 <Text style={styles.statLabel}>Seats</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <MapPin size={18} color={Colors.red} />
-                <Text style={styles.statValue}>{driver.distance}m</Text>
+                <Text style={styles.statValue}>{driver.distance || 0}m</Text>
                 <Text style={styles.statLabel}>Away</Text>
               </View>
               <View style={styles.statDivider} />
               <View style={styles.statItem}>
                 <Clock size={18} color={Colors.green} />
                 <Text style={styles.statValue}>
-                  ~{Math.ceil(driver.distance / 80)}min
+                  ~{Math.ceil((driver.distance || 0) / 80)}min
                 </Text>
                 <Text style={styles.statLabel}>ETA</Text>
               </View>
@@ -333,8 +450,10 @@ export default function ChatScreen() {
                       },
                     ]}
                   >
-                    {driver.tricycleType.charAt(0).toUpperCase() +
-                      driver.tricycleType.slice(1)}{" "}
+                    {driver.tricycleType
+                      ? driver.tricycleType.charAt(0).toUpperCase() +
+                        driver.tricycleType.slice(1)
+                      : "Standard"}{" "}
                     Keke
                   </Text>
                 </View>
@@ -359,13 +478,13 @@ export default function ChatScreen() {
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Fare</Text>
-                <Text style={styles.detailValue}>₦{driver.fare}</Text>
+                <Text style={styles.detailValue}>₦{driver.fare || 0}</Text>
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Available Seats</Text>
                 <Text style={styles.detailValue}>
-                  {driver.totalSeats - driver.occupiedSeats} /{" "}
-                  {driver.totalSeats}
+                  {(driver.totalSeats || 0) - (driver.occupiedSeats || 0)} /{" "}
+                  {driver.totalSeats || 0}
                 </Text>
               </View>
             </View>
@@ -514,11 +633,33 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     backgroundColor: Colors.white,
-    gap: 10,
     borderTopWidth: 1,
     borderTopColor: Colors.border,
   },
-  textInput: {
+  suggestionsContainer: {
+    backgroundColor: Colors.white,
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#F3F4F6",
+  },
+  suggestionsScroll: {
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  suggestionBtn: {
+    backgroundColor: Colors.primary + "10",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.primary + "30",
+  },
+  suggestionText: {
+    color: Colors.primary,
+    fontSize: 13,
+    fontWeight: "600",
+  },
+  input: {
     flex: 1,
     backgroundColor: Colors.background,
     paddingHorizontal: 16,

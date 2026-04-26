@@ -17,7 +17,6 @@
     "@sendgrid/mail": "^8.1.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/socket.io": "^3.0.1",
-    "@types/twilio": "^3.19.2",
     "@types/ws": "^8.18.1",
     "axios": "^1.13.6",
     "bcryptjs": "^3.0.3",
@@ -34,7 +33,6 @@
     "socket.io": "^4.8.3",
     "sqlite3": "^5.1.7",
     "ts-node-dev": "^2.0.0",
-    "twilio": "^5.13.0",
     "typeorm": "^0.3.28",
     "ws": "^8.19.0"
   },

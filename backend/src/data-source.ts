@@ -11,6 +11,9 @@ import { Voucher } from "./entities/Voucher";
 import { ChatMessage } from "./entities/ChatMessage";
 import { Driver } from "./entities/Driver";
 import { Rider } from "./entities/Rider";
+import { Vendor } from "./entities/Vendor";
+import { Product } from "./entities/Product";
+import { Order } from "./entities/Order";
 
 export const AppDataSource = new DataSource({
   type: "sqlite",
@@ -29,6 +32,9 @@ export const AppDataSource = new DataSource({
     ChatMessage,
     Driver,
     Rider,
+    Vendor,
+    Product,
+    Order,
   ],
   migrations: [],
   subscribers: [],

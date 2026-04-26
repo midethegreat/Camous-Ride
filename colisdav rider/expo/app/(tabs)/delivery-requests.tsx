@@ -257,7 +257,11 @@ export default function DeliveryRequestsScreen() {
       </ScrollView>
 
       {/* History Modal */}
-      <Modal visible={showHistory} animationType="slide" transparent={true}>
+      <Modal
+        visible={showHistory}
+        animationType="slide"
+        transparent={true}
+      >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -272,41 +276,25 @@ export default function DeliveryRequestsScreen() {
                 <View key={item.id} style={styles.historyCard}>
                   <View style={styles.historyInfo}>
                     <Text style={styles.historyId}>{item.id}</Text>
-                    <Text style={styles.historyRestaurant}>
-                      {item.restaurant}
-                    </Text>
+                    <Text style={styles.historyRestaurant}>{item.restaurant}</Text>
                     <Text style={styles.historyDate}>{item.date}</Text>
                   </View>
                   <View style={styles.historyStatus}>
-                    <Text style={styles.historyPrice}>
-                      ₦{item.price.toLocaleString()}
-                    </Text>
-                    <View
-                      style={[
-                        styles.statusBadge,
-                        {
-                          backgroundColor:
-                            item.status === "accepted" ? "#E6F4EA" : "#FCE8E6",
-                        },
-                      ]}
-                    >
-                      {item.status === "accepted" ? (
+                    <Text style={styles.historyPrice}>₦{item.price.toLocaleString()}</Text>
+                    <View style={[
+                      styles.statusBadge, 
+                      { backgroundColor: item.status === 'accepted' ? '#E6F4EA' : '#FCE8E6' }
+                    ]}>
+                      {item.status === 'accepted' ? (
                         <CheckCircle2 size={12} color="#1E8E3E" />
                       ) : (
                         <XCircle size={12} color="#D93025" />
                       )}
-                      <Text
-                        style={[
-                          styles.statusText,
-                          {
-                            color:
-                              item.status === "accepted"
-                                ? "#1E8E3E"
-                                : "#D93025",
-                          },
-                        ]}
-                      >
-                        {item.status === "accepted" ? "Accepted" : "Declined"}
+                      <Text style={[
+                        styles.statusText,
+                        { color: item.status === 'accepted' ? '#1E8E3E' : '#D93025' }
+                      ]}>
+                        {item.status === 'accepted' ? 'Accepted' : 'Declined'}
                       </Text>
                     </View>
                   </View>
@@ -323,19 +311,19 @@ export default function DeliveryRequestsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F8F9FA",
+    backgroundColor: '#F8F9FA',
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: Colors.white,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.text,
   },
   backButton: {
@@ -349,14 +337,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 20,
     marginBottom: 15,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: "800",
+    fontWeight: '800',
     color: Colors.text,
   },
   badge: {
@@ -369,33 +357,33 @@ const styles = StyleSheet.create({
   badgeText: {
     color: Colors.white,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   requestCard: {
     backgroundColor: Colors.white,
     borderRadius: 20,
     padding: 20,
     marginBottom: 15,
-    shadowColor: "#000",
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.05,
     shadowRadius: 10,
     elevation: 3,
   },
   cardHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 15,
   },
   idContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 8,
   },
   requestId: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.textSecondary,
   },
   timeText: {
@@ -407,7 +395,7 @@ const styles = StyleSheet.create({
   },
   restaurantName: {
     fontSize: 18,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.text,
   },
   itemsText: {
@@ -416,14 +404,14 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   detailsRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 15,
   },
   detailItem: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
   },
   detailText: {
@@ -431,8 +419,8 @@ const styles = StyleSheet.create({
     color: Colors.textSecondary,
   },
   priceContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
   },
   priceLabel: {
@@ -441,7 +429,7 @@ const styles = StyleSheet.create({
   },
   priceValue: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: '800',
     color: Colors.primary,
   },
   divider: {
@@ -453,8 +441,8 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   locationRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 12,
   },
   dot: {
@@ -475,22 +463,22 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   cardActions: {
-    flexDirection: "row",
+    flexDirection: 'row',
     gap: 12,
   },
   declineBtn: {
     flex: 1,
     height: 48,
     borderRadius: 12,
-    backgroundColor: "#F8F9FA",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#F8F9FA',
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: Colors.borderLight,
   },
   declineBtnText: {
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
     color: Colors.textSecondary,
   },
   acceptBtn: {
@@ -498,17 +486,17 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 12,
     backgroundColor: Colors.primary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   acceptBtnText: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.white,
   },
   emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 60,
   },
   emptyText: {
@@ -518,34 +506,34 @@ const styles = StyleSheet.create({
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: Colors.white,
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
-    height: "80%",
+    height: '80%',
     padding: 25,
   },
   modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 20,
   },
   modalTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: '800',
     color: Colors.text,
   },
   historyList: {
     flex: 1,
   },
   historyCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 15,
     borderBottomWidth: 1,
     borderBottomColor: Colors.borderLight,
@@ -555,7 +543,7 @@ const styles = StyleSheet.create({
   },
   historyId: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.text,
   },
   historyRestaurant: {
@@ -569,17 +557,17 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   historyStatus: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
   },
   historyPrice: {
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: '700',
     color: Colors.text,
     marginBottom: 4,
   },
   statusBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 4,
     paddingHorizontal: 8,
     paddingVertical: 4,
@@ -587,6 +575,6 @@ const styles = StyleSheet.create({
   },
   statusText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: '700',
   },
 });

@@ -9,6 +9,7 @@ const Colors = {
   primaryDark: "#145C33",
   primaryLight: "#E8F5EC",
   primaryMuted: "#2D9B5A",
+  secondary: "#DC2626",
   accent: "#F57C00",
   accentLight: "#FFF3E0",
   dark: "#1A1A1A",

@@ -288,9 +288,7 @@ export default function DeliveriesScreen() {
                   </Text>
                 </View>
                 <View style={styles.priceRow}>
-                  <Text style={styles.deliveryFeeText}>
-                    ₦{restaurant.deliveryFee.toLocaleString()} delivery
-                  </Text>
+                  <Text style={styles.deliveryFeeText}></Text>
                   <TouchableOpacity style={styles.addGridBtn}>
                     <Plus size={18} color={Colors.white} />
                   </TouchableOpacity>
@@ -409,7 +407,7 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: 24,
-    marginBottom: 12,
+    marginBottom: 6,
   },
   searchInputContainer: {
     flexDirection: "row",
@@ -446,7 +444,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     paddingHorizontal: 24,
     gap: 12,
-    marginBottom: 16,
+    marginBottom: 12,
   },
   categoryTab: {
     paddingHorizontal: 20,

@@ -175,6 +175,18 @@ export default function RestaurantMenuScreen() {
     [isSupermarket, searchQuery, selectedCategory],
   );
 
+  // Group items by category for grid sections
+  const itemsByCategory = useMemo(() => {
+    const grouped: Record<string, FoodItem[]> = {};
+    filteredItems.forEach((item) => {
+      if (!grouped[item.category]) {
+        grouped[item.category] = [];
+      }
+      grouped[item.category].push(item);
+    });
+    return grouped;
+  }, [filteredItems]);
+
   const handleAddToCart = useCallback(
     (item: FoodItem) => {
       LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -198,50 +210,41 @@ export default function RestaurantMenuScreen() {
     [cart],
   );
 
-  const renderItem = (item: FoodItem) => {
+  const renderGridItem = (item: FoodItem) => {
     const quantity = getItemQuantity(item.id);
 
     return (
-      <View key={item.id} style={styles.itemCard}>
-        <Image source={{ uri: item.image }} style={styles.itemImage} />
-        <View style={styles.itemInfo}>
-          <View style={styles.tagRow}>
-            <View style={styles.tag}>
-              <Text style={styles.tagText}>
-                {isSupermarket
-                  ? item.category
-                  : item.category === "Salads"
-                    ? "Refreshing"
-                    : "Craveworthy"}
-              </Text>
-            </View>
-            <View style={styles.ratingRow}>
-              <Star size={14} color="#FFD700" fill="#FFD700" />
-              <Text style={styles.ratingText}>{item.rating} (9k+)</Text>
-            </View>
-          </View>
-          <Text style={styles.itemName} numberOfLines={2}>
+      <View key={item.id} style={styles.gridItemCard}>
+        <Image source={{ uri: item.image }} style={styles.gridItemImage} />
+        <View style={styles.gridItemInfo}>
+          <Text style={styles.gridItemName} numberOfLines={2}>
             {item.name}
           </Text>
-          <View style={styles.cardFooter}>
-            <Text style={styles.itemPrice}>₦{item.price.toLocaleString()}</Text>
-            <View style={styles.quantityControls}>
+          <Text style={styles.gridItemPrice}>
+            ₦{item.price.toLocaleString()}
+          </Text>
+          <View style={styles.gridItemFooter}>
+            <View style={styles.gridRatingRow}>
+              <Star size={12} color="#FFD700" fill="#FFD700" />
+              <Text style={styles.gridRatingText}>{item.rating}</Text>
+            </View>
+            <View style={styles.gridQuantityControls}>
               {quantity > 0 && (
                 <>
                   <TouchableOpacity
-                    style={styles.minusBtn}
+                    style={styles.gridMinusBtn}
                     onPress={() => handleRemoveFromCart(item.id, quantity)}
                   >
-                    <Minus size={16} color={Colors.dark} />
+                    <Minus size={14} color={Colors.dark} />
                   </TouchableOpacity>
-                  <Text style={styles.quantityText}>{quantity}</Text>
+                  <Text style={styles.gridQuantityText}>{quantity}</Text>
                 </>
               )}
               <TouchableOpacity
-                style={styles.addBtn}
+                style={styles.gridAddBtn}
                 onPress={() => handleAddToCart(item)}
               >
-                <Plus size={16} color={Colors.white} />
+                <Plus size={14} color={Colors.white} />
               </TouchableOpacity>
             </View>
           </View>
@@ -249,6 +252,13 @@ export default function RestaurantMenuScreen() {
       </View>
     );
   };
+
+  const renderSection = (category: string, items: FoodItem[]) => (
+    <View key={category} style={styles.sectionContainer}>
+      <Text style={styles.sectionTitle}>{category}</Text>
+      <View style={styles.gridContainer}>{items.map(renderGridItem)}</View>
+    </View>
+  );
 
   return (
     <SafeAreaView style={styles.container} edges={["top"]}>
@@ -316,13 +326,15 @@ export default function RestaurantMenuScreen() {
         ))}
       </ScrollView>
 
-      {/* Items List */}
+      {/* Items Grid with Sections */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.itemsScroll}
         contentContainerStyle={styles.listContent}
       >
-        {filteredItems.map(renderItem)}
+        {Object.entries(itemsByCategory).map(([category, items]) =>
+          renderSection(category, items),
+        )}
       </ScrollView>
 
       {/* Sticky Footer */}
@@ -394,17 +406,22 @@ const styles = StyleSheet.create({
   },
   searchContainer: {
     paddingHorizontal: 20,
-    paddingTop: 12,
-    paddingBottom: 4,
+    paddingTop: 8,
+    paddingBottom: 0,
   },
   searchInputContainer: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: Colors.white,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    height: 48,
-    gap: 8,
+    borderRadius: 16,
+    paddingHorizontal: 16,
+    height: 52,
+    gap: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
   },
   searchInput: {
     flex: 1,
@@ -412,8 +429,9 @@ const styles = StyleSheet.create({
     color: Colors.dark,
   },
   categoryScroll: {
-    height: 50,
-    marginVertical: 8,
+    height: 0,
+    marginTop: -90,
+    marginBottom: -200,
   },
   categoryContent: {
     paddingHorizontal: 16,
@@ -421,22 +439,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   categoryTab: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 24,
     backgroundColor: Colors.white,
-    elevation: 3,
+    elevation: 2,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
   },
   categoryTabActive: {
     backgroundColor: Colors.dark,
   },
   categoryTabText: {
-    fontSize: 14,
-    fontWeight: "600",
+    fontSize: 13,
+    fontWeight: "500",
     color: Colors.gray,
   },
   categoryTabTextActive: {
@@ -453,20 +471,20 @@ const styles = StyleSheet.create({
   itemCard: {
     flexDirection: "row",
     backgroundColor: Colors.white,
-    borderRadius: 24,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 16,
+    marginBottom: 12,
     alignItems: "center",
-    elevation: 2,
+    elevation: 1,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
   },
   itemImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 20,
+    width: 96,
+    height: 96,
+    borderRadius: 16,
   },
   itemInfo: {
     flex: 1,
@@ -500,10 +518,10 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   itemName: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "600",
     color: Colors.dark,
-    marginBottom: 8,
+    marginBottom: 6,
     lineHeight: 20,
   },
   cardFooter: {
@@ -533,12 +551,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   addBtn: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "#FF4B3A", // Orange-red from image
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#FF4B3A",
     justifyContent: "center",
     alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   quantityText: {
     fontSize: 14,
@@ -580,5 +603,105 @@ const styles = StyleSheet.create({
     color: Colors.white,
     fontSize: 16,
     fontWeight: "700",
+  },
+  sectionContainer: {
+    marginBottom: 24,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: "700",
+    color: Colors.dark,
+    marginBottom: 16,
+    paddingHorizontal: 20,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  gridItemCard: {
+    width: "48%",
+    backgroundColor: Colors.white,
+    borderRadius: 16,
+    padding: 12,
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+  },
+  gridItemImage: {
+    width: "100%",
+    height: 120,
+    borderRadius: 12,
+    marginBottom: 12,
+  },
+  gridItemInfo: {
+    flex: 1,
+  },
+  gridItemName: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.dark,
+    marginBottom: 6,
+    lineHeight: 18,
+    height: 36,
+  },
+  gridItemPrice: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: Colors.dark,
+    marginBottom: 8,
+  },
+  gridItemFooter: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  gridRatingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+  },
+  gridRatingText: {
+    fontSize: 11,
+    color: Colors.gray,
+    fontWeight: "500",
+  },
+  gridQuantityControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  gridMinusBtn: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: Colors.white,
+    justifyContent: "center",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#E5E7EB",
+  },
+  gridAddBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#FF4B3A",
+    justifyContent: "center",
+    alignItems: "center",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  gridQuantityText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: Colors.dark,
+    minWidth: 16,
+    textAlign: "center",
   },
 });

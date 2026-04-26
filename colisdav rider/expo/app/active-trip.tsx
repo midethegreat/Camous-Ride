@@ -16,38 +16,93 @@ import {
   MessageCircle,
   Clock,
   MapPin,
+  Brain,
+  Zap,
+  TrendingUp,
 } from "lucide-react-native";
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from "react-native-maps";
+import { Platform } from "react-native";
+
+// Platform-specific imports for react-native-maps with enhanced error handling
+let MapView: any, Marker: any, Polyline: any, PROVIDER_GOOGLE: any;
+
+try {
+  if (Platform.OS !== "web") {
+    // Use dynamic import to prevent bundling issues
+    const mapsModule = require("react-native-maps");
+    MapView = mapsModule.default;
+    Marker = mapsModule.Marker;
+    Polyline = mapsModule.Polyline;
+    PROVIDER_GOOGLE = mapsModule.PROVIDER_GOOGLE;
+  } else {
+    // Enhanced web fallback - create mock components that don't cause issues
+    MapView = ({ children, style, region, initialRegion, ...props }: any) => (
+      <View style={[style, { backgroundColor: "#f0f0f0" }]} {...props}>
+        <Text style={{ textAlign: "center", marginTop: 20 }}>
+          Map View (Web Preview)
+        </Text>
+        {children}
+      </View>
+    );
+    Marker = ({ children, coordinate, ...props }: any) => (
+      <View
+        style={{
+          position: "absolute",
+          backgroundColor: "red",
+          width: 10,
+          height: 10,
+          borderRadius: 5,
+        }}
+        {...props}
+      >
+        {children}
+      </View>
+    );
+    Polyline = ({ children, coordinates, ...props }: any) => (
+      <View style={{ height: 2, backgroundColor: "blue" }} {...props}>
+        {children}
+      </View>
+    );
+    PROVIDER_GOOGLE = "google";
+  }
+} catch (error) {
+  console.warn("react-native-maps not available, using fallback components");
+  // Fallback for any platform if react-native-maps fails to load
+  MapView = ({ children, style }: any) => <View style={style}>{children}</View>;
+  Marker = ({ children }: any) => <View>{children}</View>;
+  Polyline = ({ children }: any) => <View>{children}</View>;
+  PROVIDER_GOOGLE = "google";
+}
 import { useRouter } from "expo-router";
 import { Colors } from "@/constants/color";
+import { useRouteOptimization, useDemandPrediction } from "@/hooks/useAI";
 
 const { width, height } = Dimensions.get("window");
 
 const mapStyle = [
   {
-    "elementType": "geometry",
-    "stylers": [{ "color": "#f0f0f0" }]
+    elementType: "geometry",
+    stylers: [{ color: "#f0f0f0" }],
   },
   {
-    "featureType": "water",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#94d3f3" }]
+    featureType: "water",
+    elementType: "geometry",
+    stylers: [{ color: "#94d3f3" }],
   },
   {
-    "featureType": "road",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#ffffff" }]
+    featureType: "road",
+    elementType: "geometry",
+    stylers: [{ color: "#ffffff" }],
   },
   {
-    "featureType": "road.highway",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#ffeb3b" }]
+    featureType: "road.highway",
+    elementType: "geometry",
+    stylers: [{ color: "#ffeb3b" }],
   },
   {
-    "featureType": "poi.park",
-    "elementType": "geometry",
-    "stylers": [{ "color": "#c5e1a5" }]
-  }
+    featureType: "poi.park",
+    elementType: "geometry",
+    stylers: [{ color: "#c5e1a5" }],
+  },
 ];
 
 export default function ActiveTripScreen() {
@@ -59,6 +114,25 @@ export default function ActiveTripScreen() {
     latitudeDelta: 0.05,
     longitudeDelta: 0.05,
   });
+
+  // AI Features
+  const {
+    optimizedRoute,
+    loading: routeLoading,
+    optimizeRoute,
+  } = useRouteOptimization(
+    { latitude: 6.5244, longitude: 3.3792 },
+    { latitude: 6.5284, longitude: 3.3842 },
+    { autoProcess: true },
+  );
+
+  const { demandPrediction, loading: demandLoading } = useDemandPrediction(
+    region,
+    new Date().toLocaleTimeString(),
+    { autoProcess: true, cacheKey: "rider_demand_prediction" },
+  );
+
+  const [showAIFeatures, setShowAIFeatures] = useState(false);
 
   // Mock coordinates for pickup and dropoff
   const pickupCoords = { latitude: 6.53, longitude: 3.38 };
@@ -172,6 +246,56 @@ export default function ActiveTripScreen() {
             <Text style={styles.routeText}>Dropoff: 222 Park Ave, North</Text>
           </View>
         </View>
+
+        {/* AI Features Section */}
+        {(demandPrediction || optimizedRoute) && (
+          <View style={styles.aiSection}>
+            <View style={styles.aiHeader}>
+              <Brain size={20} color={Colors.primary} />
+              <Text style={styles.aiTitle}>AI Insights</Text>
+              <TouchableOpacity
+                onPress={() => setShowAIFeatures(!showAIFeatures)}
+              >
+                <Text style={styles.aiToggle}>
+                  {showAIFeatures ? "Hide" : "Show"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {showAIFeatures && (
+              <View style={styles.aiContent}>
+                {demandPrediction && (
+                  <View style={styles.aiItem}>
+                    <TrendingUp size={16} color={Colors.primary} />
+                    <View style={styles.aiItemText}>
+                      <Text style={styles.aiItemLabel}>Area Demand</Text>
+                      <Text style={styles.aiItemValue}>
+                        {Math.round(demandPrediction.demand_level * 100)}% •{" "}
+                        {demandPrediction.recommended_drivers} drivers needed
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {optimizedRoute && (
+                  <View style={styles.aiItem}>
+                    <Zap size={16} color={Colors.secondary} />
+                    <View style={styles.aiItemText}>
+                      <Text style={styles.aiItemLabel}>Optimal Route</Text>
+                      <Text style={styles.aiItemValue}>
+                        {optimizedRoute.distance.toFixed(1)}km •{" "}
+                        {Math.round(optimizedRoute.duration)}min •{" "}
+                        {optimizedRoute.traffic_density > 0.5
+                          ? "Heavy traffic"
+                          : "Light traffic"}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+              </View>
+            )}
+          </View>
+        )}
 
         <TouchableOpacity
           style={styles.primaryButton}
@@ -389,5 +513,60 @@ const styles = StyleSheet.create({
     color: "white",
     fontSize: 18,
     fontWeight: "700",
+  },
+
+  // AI Features Styles
+  aiSection: {
+    backgroundColor: "#f8f9fa",
+    borderRadius: 16,
+    padding: 16,
+    marginVertical: 16,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  aiHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 12,
+  },
+  aiTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+    marginLeft: 8,
+    flex: 1,
+  },
+  aiToggle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: Colors.primary,
+  },
+  aiContent: {
+    gap: 12,
+  },
+  aiItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "white",
+    padding: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  aiItemText: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  aiItemLabel: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: Colors.textMuted,
+    marginBottom: 2,
+  },
+  aiItemValue: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: Colors.text,
   },
 });

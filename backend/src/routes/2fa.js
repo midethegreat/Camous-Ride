@@ -53,13 +53,7 @@ router.post("/send-code", async (req, res) => {
       console.log(`(Pretend) Sending email to user's email with code: ${code}`);
     } else if (method === "phone") {
       // --- SMS Sending Logic ---
-      // Use a service like Twilio here.
-      // Example:
-      // await twilioClient.messages.create({
-      //   body: `Your verification code is: ${code}`,
-      //   from: 'YOUR_TWILIO_NUMBER',
-      //   to: user.phoneNumber,
-      // });
+      // SMS functionality removed - Twilio service deleted
       console.log(`(Pretend) Sending SMS to user's phone with code: ${code}`);
     }
 

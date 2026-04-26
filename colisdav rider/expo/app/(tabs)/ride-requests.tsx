@@ -36,12 +36,7 @@ import Animated, {
   interpolate,
   Extrapolate,
 } from "react-native-reanimated";
-import {
-  riderApiService,
-  formatWhatsAppOrderMessage,
-  WhatsAppOrder,
-  WhatsAppResponse,
-} from "@/services/riderApi";
+import { riderApiService } from "@/services/riderApi";
 
 const { width } = Dimensions.get("window");
 const SWIPE_THRESHOLD = width * 0.3;
@@ -364,59 +359,12 @@ export default function RideRequestsScreen() {
   const [isGPSEnabled, setIsGPSEnabled] = useState(false);
   const [currentLocation, setCurrentLocation] =
     useState<Location.LocationObject | null>(null);
-  const [pendingWhatsAppOrders, setPendingWhatsAppOrders] = useState<
-    Map<string, WhatsAppResponse>
-  >(new Map());
   const [isProcessingOrder, setIsProcessingOrder] = useState(false);
 
   const handleAccept = async (requestId: string) => {
     console.log("Accepted request:", requestId);
 
-    // For food delivery requests, send WhatsApp notification to restaurant
-    const request = requests.find((r) => r.id === requestId);
-    if (request && request.type === "food_delivery") {
-      try {
-        // Create WhatsApp order notification
-        const whatsappOrder: WhatsAppOrder = {
-          orderId: requestId,
-          restaurantPhone: "+234XXXXXXXXXX", // This should come from restaurant profile
-          customerName: request.passengerName,
-          customerPhone: request.passengerPhone,
-          items: [
-            {
-              name: "Food Delivery Order",
-              quantity: 1,
-              price: request.fare,
-              specialInstructions: request.specialInstructions || "",
-            },
-          ],
-          totalAmount: request.fare,
-          deliveryAddress: request.dropoffLocation,
-          pickupLocation: request.pickupLocation,
-          timestamp: new Date().toISOString(),
-        };
-
-        // Send order to restaurant via WhatsApp
-        const response =
-          await riderApiService.sendOrderToRestaurant(whatsappOrder);
-
-        Alert.alert(
-          "Restaurant Notified!",
-          "Order has been sent to the restaurant via WhatsApp.",
-          [{ text: "OK" }],
-        );
-
-        // Start checking for restaurant response
-        setTimeout(() => checkRestaurantResponse(requestId), 5000);
-      } catch (error) {
-        console.error("Failed to notify restaurant via WhatsApp:", error);
-        Alert.alert(
-          "Notification Failed",
-          "Failed to notify restaurant via WhatsApp, but you can still proceed with the delivery.",
-          [{ text: "OK" }],
-        );
-      }
-    }
+    // Food delivery notification removed - Twilio service deleted
 
     setRequests((prev) => prev.filter((r) => r.id !== requestId));
     // Navigate to active trip page
@@ -564,39 +512,6 @@ export default function RideRequestsScreen() {
     </GestureHandlerRootView>
   );
 }
-
-// Utility function for reverse geocoding
-const getLocationName = async (
-  latitude: number,
-  longitude: number,
-): Promise<string> => {
-  try {
-    const [address] = await Location.reverseGeocodeAsync({
-      latitude,
-      longitude,
-    });
-
-    if (address) {
-      // Build a readable address from available components
-      const parts = [];
-      if (address.name && address.name !== address.street)
-        parts.push(address.name);
-      if (address.street) parts.push(address.street);
-      if (address.city) parts.push(address.city);
-      if (address.district) parts.push(address.district);
-      if (address.region) parts.push(address.region);
-
-      return parts.length > 0
-        ? parts.join(", ")
-        : `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-    }
-
-    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-  } catch (error) {
-    console.error("Reverse geocoding error:", error);
-    return `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
-  }
-};
 
 // Utility function to calculate distance between two coordinates (Haversine formula)
 const calculateDistance = (

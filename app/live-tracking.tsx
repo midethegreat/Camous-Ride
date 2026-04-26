@@ -118,6 +118,12 @@ export default function LiveTrackingScreen() {
           longitudeDelta: 0.02,
         }}
         provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        showsCompass={true}
+        showsTraffic={true}
+        userLocationCalloutEnabled={true}
+        followsUserLocation={true}
       >
         <Marker coordinate={riderLocation}>
           <View style={styles.riderMarker}>

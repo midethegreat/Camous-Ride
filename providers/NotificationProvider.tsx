@@ -167,12 +167,18 @@ export const NotificationProvider = ({
         } else {
           // If server fails, use local notifications
           setNotifications(localNotifications);
-          console.error(
-            `Failed to fetch notifications. Status: ${response.status}`,
-          );
+          if (__DEV__) {
+            console.warn(
+              `[NotificationProvider] Server returned ${response.status} when fetching notifications`,
+            );
+          }
         }
       } catch (error) {
-        console.error("Failed to fetch notifications.", error);
+        if (__DEV__) {
+          console.log(
+            "[NotificationProvider] Network request failed. Backend might be unreachable.",
+          );
+        }
         // On error, fall back to local notifications
         const localNotifications = await loadNotificationsFromStorage();
         setNotifications(localNotifications);

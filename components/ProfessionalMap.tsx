@@ -1,46 +1,194 @@
 import React, { useEffect, useRef } from "react";
-import { StyleSheet, View, Dimensions, Platform } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE, Polyline } from "react-native-maps";
+import { StyleSheet, View, Dimensions, Platform, Text } from "react-native";
 import { Navigation, MapPin } from "lucide-react-native";
 import { CampusLocation } from "@/types";
 import Colors from "@/constants/Colors";
 
 const { width, height } = Dimensions.get("window");
 
-const mapStyle = [
-  {
-    elementType: "geometry",
-    stylers: [{ color: "#f0f0f0" }],
-  },
-  {
-    elementType: "labels.icon",
-    stylers: [{ visibility: "on" }],
-  },
-  {
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#444444" }],
-  },
-  {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#94d3f3" }],
-  },
-  {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#ffffff" }],
-  },
-  {
-    featureType: "road.highway",
-    elementType: "geometry",
-    stylers: [{ color: "#ffeb3b" }],
-  },
-  {
-    featureType: "poi.park",
-    elementType: "geometry",
-    stylers: [{ color: "#c5e1a5" }],
-  },
-];
+// Try to import MapView, but provide a fallback for web
+let MapView: any, Marker: any, Polyline: any, PROVIDER_GOOGLE: any;
+
+try {
+  if (Platform.OS !== "web") {
+    const maps = require("react-native-maps");
+    MapView = maps.default;
+    Marker = maps.Marker;
+    Polyline = maps.Polyline;
+    PROVIDER_GOOGLE = maps.PROVIDER_GOOGLE;
+  }
+} catch (error) {
+  console.log("react-native-maps not available on this platform");
+}
+
+const ProfessionalMap = ({
+  pickup,
+  destination,
+  center,
+  locations,
+  onMarkerPress,
+  userLocation,
+}: ProfessionalMapProps) => {
+  const mapRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (mapRef.current && MapView && (pickup || destination)) {
+      const coordinates = [];
+      if (pickup) coordinates.push(pickup);
+      if (destination) coordinates.push(destination);
+
+      if (coordinates.length > 0) {
+        mapRef.current.fitToCoordinates(coordinates, {
+          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          animated: true,
+        });
+      }
+    }
+  }, [pickup, destination]);
+
+  // Web fallback
+  if (Platform.OS === "web" || !MapView) {
+    return (
+      <View style={styles.container}>
+        <View style={styles.mapPlaceholder}>
+          <Text style={styles.title}>Map View</Text>
+          <Text style={styles.subtitle}>
+            Map functionality is not available on web
+          </Text>
+
+          {pickup && (
+            <View style={styles.locationInfo}>
+              <Navigation size={16} color={Colors.primary} />
+              <Text style={styles.locationText}>
+                Pickup:{" "}
+                {pickup.name ||
+                  `${pickup.latitude.toFixed(4)}, ${pickup.longitude.toFixed(4)}`}
+              </Text>
+            </View>
+          )}
+
+          {destination && (
+            <View style={styles.locationInfo}>
+              <MapPin size={16} color={Colors.primary} />
+              <Text style={styles.locationText}>
+                Destination:{" "}
+                {destination.name ||
+                  `${destination.latitude.toFixed(4)}, ${destination.longitude.toFixed(4)}`}
+              </Text>
+            </View>
+          )}
+
+          {userLocation && (
+            <View style={styles.locationInfo}>
+              <Text style={styles.locationText}>
+                Your Location: {userLocation.latitude.toFixed(4)},{" "}
+                {userLocation.longitude.toFixed(4)}
+              </Text>
+            </View>
+          )}
+
+          {locations.length > 0 && (
+            <View style={styles.locationsList}>
+              <Text style={styles.locationsTitle}>Nearby Locations:</Text>
+              {locations.map((location) => (
+                <TouchableOpacity
+                  key={location.id}
+                  style={styles.locationItem}
+                  onPress={() => onMarkerPress?.(location)}
+                >
+                  <MapPin size={14} color={Colors.primary} />
+                  <Text style={styles.locationItemText}>{location.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.container}>
+      <MapView
+        ref={mapRef}
+        style={styles.map}
+        initialRegion={{
+          latitude: center.latitude,
+          longitude: center.longitude,
+          latitudeDelta: 0.01,
+          longitudeDelta: 0.01,
+        }}
+        provider={Platform.OS === "android" ? PROVIDER_GOOGLE : undefined}
+        showsUserLocation={true}
+        showsMyLocationButton={true}
+        showsCompass={true}
+        showsTraffic={true}
+        userLocationCalloutEnabled={true}
+        followsUserLocation={true}
+      >
+        {userLocation && (
+          <Marker
+            coordinate={{
+              latitude: userLocation.latitude,
+              longitude: userLocation.longitude,
+            }}
+            title="Your Location"
+            pinColor={Colors.primary}
+          />
+        )}
+
+        {pickup && (
+          <Marker
+            coordinate={pickup}
+            title={pickup.name}
+            description={pickup.description}
+            onPress={() => onMarkerPress?.(pickup)}
+          >
+            <View style={styles.customMarker}>
+              <Navigation size={20} color={Colors.white} fill={Colors.white} />
+            </View>
+          </Marker>
+        )}
+
+        {destination && (
+          <Marker
+            coordinate={destination}
+            title={destination.name}
+            description={destination.description}
+            onPress={() => onMarkerPress?.(destination)}
+          >
+            <View style={[styles.customMarker, styles.destinationMarker]}>
+              <MapPin size={20} color={Colors.white} fill={Colors.white} />
+            </View>
+          </Marker>
+        )}
+
+        {locations.map((location) => (
+          <Marker
+            key={location.id}
+            coordinate={location}
+            title={location.name}
+            description={location.description}
+            onPress={() => onMarkerPress?.(location)}
+          >
+            <View style={styles.locationMarker}>
+              <MapPin size={16} color={Colors.primary} />
+            </View>
+          </Marker>
+        ))}
+
+        {pickup && destination && (
+          <Polyline
+            coordinates={[pickup, destination]}
+            strokeColor={Colors.primary}
+            strokeWidth={3}
+            lineDashPattern={[5, 5]}
+          />
+        )}
+      </MapView>
+    </View>
+  );
+};
 
 interface ProfessionalMapProps {
   pickup: CampusLocation | null;
@@ -51,163 +199,106 @@ interface ProfessionalMapProps {
   userLocation?: { latitude: number; longitude: number } | null;
 }
 
-export default function ProfessionalMap({
-  pickup,
-  destination,
-  center,
-  locations,
-  onMarkerPress,
-  userLocation,
-}: ProfessionalMapProps) {
-  const mapRef = useRef<MapView>(null);
-
-  useEffect(() => {
-    if (mapRef.current) {
-      const coords = [];
-      if (pickup) coords.push({ latitude: pickup.latitude, longitude: pickup.longitude });
-      if (destination) coords.push({ latitude: destination.latitude, longitude: destination.longitude });
-      if (userLocation) coords.push({ latitude: userLocation.latitude, longitude: userLocation.longitude });
-
-      if (coords.length >= 2) {
-        mapRef.current.fitToCoordinates(coords, {
-          edgePadding: { top: 100, right: 100, bottom: 100, left: 100 },
-          animated: true,
-        });
-      } else if (center) {
-        mapRef.current.animateToRegion({
-          ...center,
-          latitudeDelta: 0.015,
-          longitudeDelta: 0.0121,
-        });
-      }
-    }
-  }, [pickup, destination, center]);
-
-  return (
-    <View style={styles.container}>
-      <MapView
-        ref={mapRef}
-        provider={PROVIDER_GOOGLE}
-        style={styles.map}
-        initialRegion={{
-          ...center,
-          latitudeDelta: 0.015,
-          longitudeDelta: 0.0121,
-        }}
-        customMapStyle={mapStyle}
-        showsUserLocation={true}
-        showsMyLocationButton={false}
-        showsCompass={false}
-        showsPointsOfInterest={false}
-      >
-        {/* All Campus Locations */}
-        {locations.map((loc) => (
-          <Marker
-            key={loc.id}
-            coordinate={{ latitude: loc.latitude, longitude: loc.longitude }}
-            onPress={() => onMarkerPress && onMarkerPress(loc)}
-          >
-            <View style={styles.locationMarker}>
-              <View style={styles.locationDot} />
-            </View>
-          </Marker>
-        ))}
-
-        {/* Pickup Marker */}
-        {pickup && (
-          <Marker
-            coordinate={{ latitude: pickup.latitude, longitude: pickup.longitude }}
-            title="Pickup"
-          >
-            <View style={styles.pickupMarker}>
-              <View style={styles.pickupDot} />
-            </View>
-          </Marker>
-        )}
-
-        {/* Destination Marker */}
-        {destination && (
-          <Marker
-            coordinate={{ latitude: destination.latitude, longitude: destination.longitude }}
-            title="Destination"
-          >
-            <View style={styles.destinationMarker}>
-              <MapPin size={24} color="white" fill="white" />
-            </View>
-          </Marker>
-        )}
-
-        {/* Route Line */}
-        {pickup && destination && (
-          <Polyline
-            coordinates={[
-              { latitude: pickup.latitude, longitude: pickup.longitude },
-              { latitude: destination.latitude, longitude: destination.longitude },
-            ]}
-            strokeColor={Colors.primary}
-            strokeWidth={4}
-          />
-        )}
-      </MapView>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
   map: {
-    ...StyleSheet.absoluteFillObject,
+    width: width,
+    height: height,
   },
-  locationMarker: {
-    width: 20,
-    height: 20,
+  mapPlaceholder: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: Colors.lightGray,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
     borderRadius: 10,
-    backgroundColor: "rgba(27, 122, 67, 0.2)",
-    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  title: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: Colors.secondaryText,
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  locationInfo: {
+    flexDirection: "row",
     alignItems: "center",
+    marginVertical: 4,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.white,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    width: "100%",
   },
-  locationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.primary,
+  locationText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: Colors.text,
+    flex: 1,
   },
-  pickupMarker: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: "white",
-    justifyContent: "center",
+  locationsList: {
+    marginTop: 16,
+    width: "100%",
+  },
+  locationsTitle: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: Colors.text,
+    marginBottom: 8,
+  },
+  locationItem: {
+    flexDirection: "row",
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: Colors.primary,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    backgroundColor: Colors.white,
+    borderRadius: 6,
+    marginVertical: 2,
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  pickupDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+  locationItemText: {
+    marginLeft: 8,
+    fontSize: 14,
+    color: Colors.text,
+  },
+  customMarker: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     backgroundColor: Colors.primary,
-  },
-  destinationMarker: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: Colors.red,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 3,
-    borderColor: "white",
+    borderColor: Colors.white,
+    elevation: 5,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  },
+  destinationMarker: {
+    backgroundColor: Colors.secondary,
+  },
+  locationMarker: {
+    backgroundColor: Colors.white,
+    padding: 8,
+    borderRadius: 20,
+    borderWidth: 2,
+    borderColor: Colors.primary,
   },
 });
+
+export default ProfessionalMap;

@@ -1,0 +1,32 @@
+diff --git a/node_modules/@expo/cli/src/api/getNativeModuleVersions.ts b/node_modules/@expo/cli/src/api/getNativeModuleVersions.ts
+index original..patched 100644
+--- a/node_modules/@expo/cli/src/api/getNativeModuleVersions.ts
++++ b/node_modules/@expo/cli/src/api/getNativeModuleVersions.ts
+@@ -36,6 +36,11 @@ export async function getNativeModuleVersionsAsync(
+   sdkVersion: string,
+   platform: string,
+ ): Promise<NativeModuleVersionInfo> {
++  // Skip network request that causes "Body is unusable" errors
++  if (process.env.EXPO_SKIP_DEPENDENCY_VALIDATION === "true") {
++    return {};
++  }
++  
+   const versions = await Client.getNativeModuleVersionsAsync({
+     sdkVersion,
+     platform,
+diff --git a/node_modules/@expo/cli/src/start/doctor/dependencies/validateDependenciesVersions.ts b/node_modules/@expo/cli/src/start/doctor/dependencies/validateDependenciesVersions.ts
+index original..patched 100644
+--- a/node_modules/@expo/cli/src/start/doctor/dependencies/validateDependenciesVersions.ts
++++ b/node_modules/@expo/cli/src/start/doctor/dependencies/validateDependenciesVersions.ts
+@@ -46,6 +46,11 @@ export async function validateDependenciesVersionsAsync(
+   projectRoot: string,
+   exp: ExpoConfig,
+ ): Promise<void> {
++  // Skip dependency validation that causes network errors
++  if (process.env.EXPO_SKIP_DEPENDENCY_VALIDATION === "true") {
++    return;
++  }
++  
+   const spinner = ora().start('Verifying prebuild configuration...');
+   try {
+     const { checkDependenciesAsync } = await import('./checkDependenciesAsync');

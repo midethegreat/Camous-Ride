@@ -12,7 +12,7 @@ import {
   Alert,
   Animated,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useLocalSearchParams } from "expo-router";
 import {
   Menu,
   User,

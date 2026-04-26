@@ -2,7 +2,6 @@ import { Request, Response } from "express";
 import { AppDataSource } from "../data-source";
 import { Rider, RiderStatus, RiderKycStatus } from "../entities/Rider";
 import { sendOtpEmail } from "../utils/mailer";
-import { sendOTP } from "../services/twilioService";
 import jwt from "jsonwebtoken";
 
 const riderRepository = AppDataSource.getRepository(Rider);
@@ -77,11 +76,8 @@ export class RiderAuthController {
 
       pendingOtps.set(email.toLowerCase().trim(), { code, expiresAt });
 
-      try {
-        await sendOTP(phoneNumber, code);
-      } catch (e) {
-        console.error("Failed to send SMS OTP:", e);
-      }
+      // SMS OTP removed - Twilio service deleted
+      console.log(`📱 RIDER SMS OTP for ${phoneNumber}: ${code}`);
 
       console.log(`📱 RIDER SMS OTP for ${phoneNumber}: ${code}`);
       res.status(200).json({

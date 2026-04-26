@@ -42,10 +42,6 @@ export default function CheckoutScreen() {
     "Getting location...",
   );
 
-  // Get restaurant WhatsApp number from navigation params
-  const restaurantWhatsApp =
-    (params.restaurantWhatsApp as string) || "+2348012345678"; // Default fallback
-
   const grandTotal = totalAmount + deliveryFee;
 
   // Get location name based on coordinates (simplified geocoding)
@@ -114,53 +110,7 @@ export default function CheckoutScreen() {
     return R * c;
   };
 
-  // Send order details to restaurant via WhatsApp
-  const sendOrderToWhatsApp = async (orderDetails: any) => {
-    try {
-      const message = `
-🍕 NEW FOOD ORDER 🍕
-
-Order ID: ${orderDetails.orderId}
-Customer: ${user?.name || "Guest"}
-Phone: ${user?.phone || "N/A"}
-
-📍 Delivery Location:
-${deliveryLocation}
-
-🍽️ Order Items:
-${orderDetails.items
-  .map(
-    (item: any) =>
-      `• ${item.name} x${item.quantity} - ₦${(item.price * item.quantity).toLocaleString()}`,
-  )
-  .join("\n")}
-
-💰 Order Summary:
-Subtotal: ₦${totalAmount.toLocaleString()}
-Delivery Fee: ₦${deliveryFee.toLocaleString()}
-Total: ₦${grandTotal.toLocaleString()}
-
-🚚 Delivery Instructions:
-Please deliver to the specified location.
-
-⏰ Order Time: ${new Date().toLocaleString()}
-
----
-Powered by CID Food Delivery
-      `;
-
-      const whatsappUrl = `https://wa.me/${restaurantWhatsApp}?text=${encodeURIComponent(message)}`;
-
-      // In a real app, this would be sent via API to the restaurant
-      console.log("WhatsApp message prepared:", message);
-      console.log("WhatsApp URL:", whatsappUrl);
-
-      // For now, we'll just log it. In production, you'd send this via your backend
-      // or use a WhatsApp Business API
-    } catch (error) {
-      console.error("Failed to send WhatsApp message:", error);
-    }
-  };
+  // Order notification functionality removed - Twilio service deleted
 
   // Get current location on component mount
   useEffect(() => {
@@ -322,17 +272,7 @@ Powered by CID Food Delivery
         "Congratulations! You've unlocked a 10% discount on your next delivery.",
       );
 
-      // Send order details to restaurant via WhatsApp
-      const orderDetails = {
-        orderId: `ORD-${Date.now()}`,
-        items: [], // This would come from cart items
-        deliveryLocation: deliveryLocation,
-        totalAmount: totalAmount,
-        deliveryFee: deliveryFee,
-        grandTotal: grandTotal,
-      };
-
-      sendOrderToWhatsApp(orderDetails);
+      // WhatsApp order notification removed - Twilio service deleted
 
       router.push("/rider-assignment" as any);
     }, 2000);

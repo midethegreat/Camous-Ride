@@ -14,7 +14,6 @@ import {
   sendToUser,
   broadcastToDrivers,
 } from "../notificationService";
-import { sendRideUpdate } from "../services/twilioService";
 import { checkAndApplyRewardTier } from "../services/rewardService";
 import {
   calculateFare,
@@ -507,14 +506,6 @@ export const completeRide = async (req: Request, res: Response) => {
       "user",
     );
 
-    if (ride.user.phoneNumber) {
-      await sendRideUpdate(
-        ride.user.phoneNumber,
-        "completed",
-        `Your ride has been completed. Fare: ₦${ride.fare}. Thank you for using Camous-Ride!`,
-      );
-    }
-
     if (ride.driver) {
       sendToUser(
         ride.driver.user.id,
@@ -585,14 +576,6 @@ export const acceptRide = async (req: Request, res: Response) => {
       { rideId: ride.id, driverName: driver.user.fullName },
       "user",
     );
-
-    if (ride.user.phoneNumber) {
-      await sendRideUpdate(
-        ride.user.phoneNumber,
-        "accepted",
-        `Driver ${driver.user.fullName} is on their way to pick you up. Verification code: ${ride.verificationCode}`,
-      );
-    }
 
     sendToUser(driver.user.id, "ride_accepted", { rideId: ride.id }, "driver");
 

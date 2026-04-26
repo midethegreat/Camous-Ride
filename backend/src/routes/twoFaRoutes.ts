@@ -1,6 +1,5 @@
 import { Router, Request, Response } from "express";
 import crypto from "crypto";
-import { sendOTP } from "../services/twilioService";
 import { AppDataSource } from "../data-source";
 import { User } from "../entities/User";
 
@@ -45,15 +44,19 @@ router.post("/send-code", async (req: Request, res: Response) => {
 
     if (method === "email") {
       // --- Email Sending Logic ---
-      console.log(`(Pretend) Sending email to ${user.email} with code: ${code}`);
+      console.log(
+        `(Pretend) Sending email to ${user.email} with code: ${code}`,
+      );
       // In a real app, you would use a mail service here
     } else if (method === "phone") {
       if (!user.phoneNumber) {
-        return res.status(400).json({ message: "User has no phone number registered." });
+        return res
+          .status(400)
+          .json({ message: "User has no phone number registered." });
       }
 
-      await sendOTP(user.phoneNumber, code);
-      console.log(`Sent SMS to ${user.phoneNumber} with code: ${code}`);
+      // SMS OTP removed - Twilio service deleted
+      console.log(`SMS OTP removed. Phone: ${user.phoneNumber}, Code: ${code}`);
     }
 
     res.status(200).json({ message: "Verification code sent successfully." });

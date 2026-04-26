@@ -1,16 +1,28 @@
 const { getDefaultConfig } = require("expo/metro-config");
-const path = require("path");
 
-let config = getDefaultConfig(__dirname);
+module.exports = (() => {
+  const config = getDefaultConfig(__dirname);
 
-// Apply our path alias configuration
-config.resolver = config.resolver || {};
-config.resolver.alias = {
-  "@": path.resolve(__dirname),
-};
+  // Configure resolver to handle TypeScript files properly
+  config.resolver = {
+    ...config.resolver,
+    sourceExts: ["jsx", "js", "ts", "tsx", "json", "cjs", "mjs"],
+    assetExts: [
+      "glb",
+      "gltf",
+      "png",
+      "jpg",
+      "jpeg",
+      "gif",
+      "mp4",
+      "svg",
+      "ttf",
+      "otf",
+      "woff",
+      "woff2",
+      "webp",
+    ],
+  };
 
-// Disable New Architecture features to fix TurboModule errors
-config.resolver.unstable_enablePackageExports = false;
-config.resolver.unstable_conditionNames = ["require", "import"];
-
-module.exports = config;
+  return config;
+})();

@@ -5,7 +5,6 @@ import { Guest } from "../entities/Guest";
 import { BankAccount, VerificationStatus } from "../entities/BankAccount";
 import { Driver, DriverStatus } from "../entities/Driver";
 import { sendOtpEmail } from "../utils/mailer";
-import { sendOTP } from "../services/twilioService";
 import { sendNotification } from "../notificationService";
 import {
   Transaction,
@@ -212,9 +211,6 @@ export const registerUser = async (req: Request, res: Response) => {
         existingUser.otpExpires = new Date(Date.now() + 10 * 60 * 1000);
         try {
           await sendOtpEmail(existingUser.email, existingUser.otp);
-          if (existingUser.phoneNumber) {
-            await sendOTP(existingUser.phoneNumber, existingUser.otp);
-          }
         } catch (e) {
           if (process.env.NODE_ENV === "production") throw e;
         }
@@ -246,9 +242,6 @@ export const registerUser = async (req: Request, res: Response) => {
 
     try {
       await sendOtpEmail(newUser.email, newUser.otp);
-      if (newUser.phoneNumber) {
-        await sendOTP(newUser.phoneNumber, newUser.otp);
-      }
     } catch (e) {
       if (process.env.NODE_ENV === "production") throw e;
     }

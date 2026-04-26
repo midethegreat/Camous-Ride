@@ -13,7 +13,19 @@ import {
   Easing,
 } from "react-native";
 import * as Location from "expo-location";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
+// Conditional import for web compatibility
+let MapView: any, Marker: any, PROVIDER_GOOGLE: any;
+
+if (Platform.OS !== "web") {
+  try {
+    const Maps = require("react-native-maps");
+    MapView = Maps.default;
+    Marker = Maps.Marker;
+    PROVIDER_GOOGLE = Maps.PROVIDER_GOOGLE;
+  } catch (error) {
+    console.warn("react-native-maps not available");
+  }
+}
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import {
@@ -345,7 +357,7 @@ export default function DriverHomeScreen() {
   };
 
   const formatCurrency = (amount: number) => {
-    return `₦${amount.toLocaleString()}`;
+    return `â‚¦${amount.toLocaleString()}`;
   };
 
   const toggleOnline = async () => {
@@ -638,7 +650,7 @@ export default function DriverHomeScreen() {
             </View>
             <View style={styles.statDivider} />
             <View style={styles.statItem}>
-              <Text style={styles.statValue}>₦1,245</Text>
+              <Text style={styles.statValue}>â‚¦1,245</Text>
               <Text style={styles.statLabel}>Earnings</Text>
             </View>
           </View>

@@ -22,8 +22,10 @@ import diagnosticsRoutes from "./routes/diagnostics";
 import fraudRoutes from "./routes/fraudRoutes";
 import voucherRoutes from "./routes/voucherRoutes";
 import chatRoutes from "./routes/chatRoutes";
+
 import { handleFlutterwaveWebhook } from "./controllers/webhookController";
 import { verifyFlutterwaveTransaction } from "./controllers/transactionController";
+import { seedSampleData } from "./utils/seedData";
 dotenv.config();
 
 const app: Express = express();
@@ -61,6 +63,7 @@ app.use("/api/diagnostics", diagnosticsRoutes);
 app.use("/api/fraud", fraudRoutes);
 app.use("/api/vouchers", voucherRoutes);
 app.use("/api/chat", chatRoutes);
+
 app.use("/webhooks", webhookRoutes);
 
 // Public aliases for external services and mobile clients
@@ -74,8 +77,14 @@ const server = http.createServer(app);
 initializeWebSocket(server);
 
 AppDataSource.initialize()
-  .then(() => {
+  .then(async () => {
     console.log("Data Source has been initialized!");
+
+    // Seed sample data if in development mode
+    if (process.env.NODE_ENV !== "production") {
+      await seedSampleData();
+    }
+
     // Start the server
     server.listen(Number(port), "0.0.0.0", () => {
       console.log(`[server]: Server is running at http://0.0.0.0:${port}`);

@@ -1,0 +1,277 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WhatsApp Bot Test Interface</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f5f5f5;
+      }
+      .container {
+        background: white;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      }
+      h1 {
+        color: #333;
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .test-section {
+        margin-bottom: 30px;
+        padding: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        background-color: #fafafa;
+      }
+      .test-section h3 {
+        margin-top: 0;
+        color: #555;
+      }
+      .form-group {
+        margin-bottom: 15px;
+      }
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+        color: #555;
+      }
+      input,
+      select,
+      textarea {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #25d366;
+        color: white;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+      }
+      button:hover {
+        background-color: #128c7e;
+      }
+      .response {
+        margin-top: 15px;
+        padding: 15px;
+        border-radius: 6px;
+        background-color: #e8f5e8;
+        border: 1px solid #4caf50;
+        display: none;
+      }
+      .response.error {
+        background-color: #ffeaea;
+        border-color: #f44336;
+      }
+      .command-examples {
+        background-color: #f0f0f0;
+        padding: 15px;
+        border-radius: 6px;
+        margin-top: 15px;
+      }
+      .command-examples h4 {
+        margin-top: 0;
+        color: #666;
+      }
+      .command {
+        font-family: monospace;
+        background-color: #e0e0e0;
+        padding: 5px 10px;
+        border-radius: 4px;
+        margin: 5px 0;
+        display: inline-block;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🍔 WhatsApp Restaurant Bot Test Interface</h1>
+
+      <div class="test-section">
+        <h3>📱 Test Order Creation</h3>
+        <form id="orderForm">
+          <div class="form-group">
+            <label for="vendorId">Vendor ID:</label>
+            <input type="text" id="vendorId" name="vendorId" required />
+          </div>
+          <div class="form-group">
+            <label for="customerName">Customer Name:</label>
+            <input
+              type="text"
+              id="customerName"
+              name="customerName"
+              value="John Doe"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="customerPhone">Customer Phone:</label>
+            <input
+              type="text"
+              id="customerPhone"
+              name="customerPhone"
+              value="+2348123456789"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="deliveryAddress">Delivery Address:</label>
+            <textarea id="deliveryAddress" name="deliveryAddress" required>
+123 Main Street, Lagos</textarea
+            >
+          </div>
+          <div class="form-group">
+            <label for="productName">Product Name:</label>
+            <input
+              type="text"
+              id="productName"
+              name="productName"
+              value="Classic Burger"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="quantity">Quantity:</label>
+            <input
+              type="number"
+              id="quantity"
+              name="quantity"
+              value="2"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="totalAmount">Total Amount (₦):</label>
+            <input
+              type="number"
+              id="totalAmount"
+              name="totalAmount"
+              value="5000"
+              required
+            />
+          </div>
+          <button type="submit">🚀 Create Order & Notify Vendor</button>
+        </form>
+        <div id="orderResponse" class="response"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>🔍 Test Vendor Lookup</h3>
+        <form id="vendorForm">
+          <div class="form-group">
+            <label for="phoneNumber">Phone Number:</label>
+            <input
+              type="text"
+              id="phoneNumber"
+              name="phoneNumber"
+              value="+2348012345678"
+              required
+            />
+          </div>
+          <button type="submit">🔎 Find Vendor</button>
+        </form>
+        <div id="vendorResponse" class="response"></div>
+      </div>
+
+      <div class="test-section">
+        <h3>📋 WhatsApp Command Examples</h3>
+        <div class="command-examples">
+          <h4>Product Management:</h4>
+          <div class="command">ADD|Burger|2500|Delicious beef burger</div>
+          <div class="command">UPDATE|Burger|3000</div>
+          <div class="command">DELETE|Burger</div>
+
+          <h4>Order Management:</h4>
+          <div class="command">ACCEPT</div>
+          <div class="command">REJECT</div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const API_BASE = "http://localhost:3000/api";
+
+      // Order form submission
+      document
+        .getElementById("orderForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.target);
+          const data = Object.fromEntries(formData);
+
+          try {
+            const response = await fetch(`${API_BASE}/whatsapp/orders`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            });
+
+            const result = await response.json();
+            const responseDiv = document.getElementById("orderResponse");
+
+            if (response.ok) {
+              responseDiv.innerHTML = `✅ ${result.message}<br>Order ID: ${result.order.id}<br>Status: ${result.order.status}`;
+              responseDiv.className = "response";
+            } else {
+              responseDiv.innerHTML = `❌ Error: ${result.message}`;
+              responseDiv.className = "response error";
+            }
+            responseDiv.style.display = "block";
+          } catch (error) {
+            const responseDiv = document.getElementById("orderResponse");
+            responseDiv.innerHTML = `❌ Network Error: ${error.message}`;
+            responseDiv.className = "response error";
+            responseDiv.style.display = "block";
+          }
+        });
+
+      // Vendor lookup form submission
+      document
+        .getElementById("vendorForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const phoneNumber = document.getElementById("phoneNumber").value;
+
+          try {
+            const response = await fetch(
+              `${API_BASE}/whatsapp/vendors/phone/${encodeURIComponent(phoneNumber)}`,
+            );
+            const result = await response.json();
+            const responseDiv = document.getElementById("vendorResponse");
+
+            if (response.ok) {
+              responseDiv.innerHTML = `✅ Vendor Found:<br>Name: ${result.businessName}<br>Phone: ${result.phoneNumber}<br>ID: ${result.id}`;
+              responseDiv.className = "response";
+              // Auto-fill vendor ID in order form
+              document.getElementById("vendorId").value = result.id;
+            } else {
+              responseDiv.innerHTML = `❌ Error: ${result.message}`;
+              responseDiv.className = "response error";
+            }
+            responseDiv.style.display = "block";
+          } catch (error) {
+            const responseDiv = document.getElementById("vendorResponse");
+            responseDiv.innerHTML = `❌ Network Error: ${error.message}`;
+            responseDiv.className = "response error";
+            responseDiv.style.display = "block";
+          }
+        });
+    </script>
+  </body>
+</html>

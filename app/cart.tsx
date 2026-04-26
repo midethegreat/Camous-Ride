@@ -31,9 +31,7 @@ export default function CartScreen() {
     clearCart,
   } = useCart();
 
-  // Get restaurant info from previous screen (this would need to be passed through navigation)
-  // For now, we'll use a placeholder restaurant WhatsApp number
-  const restaurantWhatsApp = "+2348012345678"; // This should come from restaurant data
+  // Restaurant info removed - Twilio service deleted
 
   if (totalItems === 0) {
     return (
@@ -142,10 +140,7 @@ export default function CartScreen() {
         <TouchableOpacity
           style={styles.checkoutBtn}
           onPress={() => {
-            router.push({
-              pathname: "/checkout",
-              params: { restaurantWhatsApp },
-            } as any);
+            router.push("/checkout" as any);
           }}
         >
           <Text style={styles.checkoutText}>Proceed to Checkout</Text>
